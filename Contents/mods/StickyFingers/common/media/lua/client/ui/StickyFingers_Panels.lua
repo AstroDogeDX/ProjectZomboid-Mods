@@ -6,8 +6,9 @@
       SFSearchPanel  — search all game items and tag them
       SFZonePanel    — list ignore zones, start corner-picking, remove
 
-    All three use plain ISScrollingListBox default row drawing (item.text),
-    so there is no custom doDrawItem to maintain.
+    Each panel positions its children in :layout(), called every frame from
+    :prerender(), so lists/buttons resize with the window. ISTabPanel does not
+    resize its child views, so this is what makes them responsive.
 ]]
 
 require "ISUI/ISPanel"
@@ -34,33 +35,41 @@ end
 
 function SFTaggedPanel:createChildren()
     ISPanel.createChildren(self)
-    local w, h = self:getWidth(), self:getHeight()
 
-    self.list = ISScrollingListBox:new(PAD, PAD, w - PAD * 2, h - PAD * 3 - BTN_H)
+    self.list = ISScrollingListBox:new(PAD, PAD, 100, 100)
     self.list:initialise()
     self.list:instantiate()
     self.list.itemheight = 22
     self.list.font = UIFont.NewSmall
-    self.list:setAnchorRight(true)
-    self.list:setAnchorBottom(true)
     self:addChild(self.list)
 
-    local btnW = (w - PAD * 3) / 2
-    self.removeBtn = ISButton:new(PAD, h - PAD - BTN_H, btnW, BTN_H, "Remove selected", self, SFTaggedPanel.onRemove)
+    self.removeBtn = ISButton:new(0, 0, 100, BTN_H, "Remove selected", self, SFTaggedPanel.onRemove)
     self.removeBtn:initialise()
-    self.removeBtn:setAnchorTop(false)
-    self.removeBtn:setAnchorBottom(true)
     self:addChild(self.removeBtn)
 
-    self.clearBtn = ISButton:new(PAD * 2 + btnW, h - PAD - BTN_H, btnW, BTN_H, "Clear all", self, SFTaggedPanel.onClear)
+    self.clearBtn = ISButton:new(0, 0, 100, BTN_H, "Clear all", self, SFTaggedPanel.onClear)
     self.clearBtn:initialise()
-    self.clearBtn:setAnchorTop(false)
-    self.clearBtn:setAnchorBottom(true)
-    self.clearBtn:setAnchorLeft(false)
-    self.clearBtn:setAnchorRight(true)
     self:addChild(self.clearBtn)
 
+    self:layout()
     self:refresh()
+end
+
+function SFTaggedPanel:layout()
+    local w, h = self:getWidth(), self:getHeight()
+    self.list:setX(PAD); self.list:setY(PAD)
+    self.list:setWidth(w - PAD * 2)
+    self.list:setHeight(h - PAD * 3 - BTN_H)
+
+    local btnW = (w - PAD * 3) / 2
+    local by = h - PAD - BTN_H
+    self.removeBtn:setX(PAD);              self.removeBtn:setY(by); self.removeBtn:setWidth(btnW)
+    self.clearBtn:setX(PAD * 2 + btnW);    self.clearBtn:setY(by); self.clearBtn:setWidth(btnW)
+end
+
+function SFTaggedPanel:prerender()
+    ISPanel.prerender(self)
+    self:layout()
 end
 
 function SFTaggedPanel:refresh()
@@ -74,14 +83,12 @@ end
 function SFTaggedPanel:onRemove()
     local item = self.list.items[self.list.selected]
     if item and item.item then
-        SF.Tags.remove(item.item.type)
-        self:refresh()
+        SF.Tags.remove(item.item.type)   -- triggers SF.UI.refreshIfOpen()
     end
 end
 
 function SFTaggedPanel:onClear()
     SF.Tags.clear()
-    self:refresh()
 end
 
 ------------------------------------------------------------------
@@ -103,34 +110,41 @@ end
 
 function SFSearchPanel:createChildren()
     ISPanel.createChildren(self)
-    local w, h = self:getWidth(), self:getHeight()
 
-    self.entry = ISTextEntryBox:new("", PAD, PAD, w - PAD * 2, BTN_H)
+    self.entry = ISTextEntryBox:new("", PAD, PAD, 100, BTN_H)
     self.entry:initialise()
     self.entry:instantiate()
-    self.entry:setAnchorRight(true)
-    self.entry.onTextChange = function() self:refresh() end
+    self.entry.onTextChangeFunction = function() self:refresh() end
     self:addChild(self.entry)
 
-    self.list = ISScrollingListBox:new(PAD, PAD * 2 + BTN_H, w - PAD * 2, h - PAD * 4 - BTN_H * 2)
+    self.list = ISScrollingListBox:new(PAD, PAD, 100, 100)
     self.list:initialise()
     self.list:instantiate()
     self.list.itemheight = 22
     self.list.font = UIFont.NewSmall
-    self.list:setAnchorRight(true)
-    self.list:setAnchorBottom(true)
     self:addChild(self.list)
 
-    self.addBtn = ISButton:new(PAD, h - PAD - BTN_H, w - PAD * 2, BTN_H, "Tag selected item", self, SFSearchPanel.onAdd)
+    self.addBtn = ISButton:new(PAD, 0, 100, BTN_H, "Tag selected item", self, SFSearchPanel.onAdd)
     self.addBtn:initialise()
-    self.addBtn:setAnchorTop(false)
-    self.addBtn:setAnchorBottom(true)
-    self.addBtn:setAnchorRight(true)
     self:addChild(self.addBtn)
 
-    self.hint = ISLabel:new(PAD, PAD * 2 + BTN_H, 18, "Type at least " .. MIN_QUERY .. " characters to search...", 0.6, 0.6, 0.6, 1, UIFont.NewSmall, true)
-    self.hint:initialise()
-    self:addChild(self.hint)
+    self:layout()
+end
+
+function SFSearchPanel:layout()
+    local w, h = self:getWidth(), self:getHeight()
+    self.entry:setX(PAD); self.entry:setY(PAD); self.entry:setWidth(w - PAD * 2)
+
+    self.list:setX(PAD); self.list:setY(PAD * 2 + BTN_H)
+    self.list:setWidth(w - PAD * 2)
+    self.list:setHeight(h - PAD * 4 - BTN_H * 2)
+
+    self.addBtn:setX(PAD); self.addBtn:setY(h - PAD - BTN_H); self.addBtn:setWidth(w - PAD * 2)
+end
+
+function SFSearchPanel:prerender()
+    ISPanel.prerender(self)
+    self:layout()
 end
 
 function SFSearchPanel:refresh()
@@ -139,11 +153,7 @@ function SFSearchPanel:refresh()
 
     local query = self.entry:getText()
     query = query and query:lower():gsub("^%s*(.-)%s*$", "%1") or ""
-    if #query < MIN_QUERY then
-        if self.hint then self.hint:setVisible(true) end
-        return
-    end
-    if self.hint then self.hint:setVisible(false) end
+    if #query < MIN_QUERY then return end
 
     local all = getScriptManager():getAllItems()
     local count = 0
@@ -167,9 +177,7 @@ end
 function SFSearchPanel:onAdd()
     local item = self.list.items[self.list.selected]
     if item and item.item then
-        SF.Tags.add(item.item.type)
-        self:refresh()
-        if self.mainWindow then self.mainWindow:refreshTagged() end
+        SF.Tags.add(item.item.type)   -- triggers SF.UI.refreshIfOpen() (updates both lists)
     end
 end
 
@@ -189,33 +197,41 @@ end
 
 function SFZonePanel:createChildren()
     ISPanel.createChildren(self)
-    local w, h = self:getWidth(), self:getHeight()
 
-    self.list = ISScrollingListBox:new(PAD, PAD, w - PAD * 2, h - PAD * 3 - BTN_H)
+    self.list = ISScrollingListBox:new(PAD, PAD, 100, 100)
     self.list:initialise()
     self.list:instantiate()
     self.list.itemheight = 22
     self.list.font = UIFont.NewSmall
-    self.list:setAnchorRight(true)
-    self.list:setAnchorBottom(true)
     self:addChild(self.list)
 
-    local btnW = (w - PAD * 3) / 2
-    self.addBtn = ISButton:new(PAD, h - PAD - BTN_H, btnW, BTN_H, "Add zone (pick corners)", self, SFZonePanel.onAdd)
+    self.addBtn = ISButton:new(0, 0, 100, BTN_H, "Add zone (pick corners)", self, SFZonePanel.onAdd)
     self.addBtn:initialise()
-    self.addBtn:setAnchorTop(false)
-    self.addBtn:setAnchorBottom(true)
     self:addChild(self.addBtn)
 
-    self.removeBtn = ISButton:new(PAD * 2 + btnW, h - PAD - BTN_H, btnW, BTN_H, "Remove selected", self, SFZonePanel.onRemove)
+    self.removeBtn = ISButton:new(0, 0, 100, BTN_H, "Remove selected", self, SFZonePanel.onRemove)
     self.removeBtn:initialise()
-    self.removeBtn:setAnchorTop(false)
-    self.removeBtn:setAnchorBottom(true)
-    self.removeBtn:setAnchorLeft(false)
-    self.removeBtn:setAnchorRight(true)
     self:addChild(self.removeBtn)
 
+    self:layout()
     self:refresh()
+end
+
+function SFZonePanel:layout()
+    local w, h = self:getWidth(), self:getHeight()
+    self.list:setX(PAD); self.list:setY(PAD)
+    self.list:setWidth(w - PAD * 2)
+    self.list:setHeight(h - PAD * 3 - BTN_H)
+
+    local btnW = (w - PAD * 3) / 2
+    local by = h - PAD - BTN_H
+    self.addBtn:setX(PAD);            self.addBtn:setY(by);    self.addBtn:setWidth(btnW)
+    self.removeBtn:setX(PAD * 2 + btnW); self.removeBtn:setY(by); self.removeBtn:setWidth(btnW)
+end
+
+function SFZonePanel:prerender()
+    ISPanel.prerender(self)
+    self:layout()
 end
 
 function SFZonePanel:refresh()
@@ -227,7 +243,6 @@ function SFZonePanel:refresh()
 end
 
 function SFZonePanel:onAdd()
-    -- Hand off to the world-based corner picker; it re-opens the window after.
     if SF.ZoneTool and SF.ZoneTool.start then
         if self.mainWindow then self.mainWindow:close() end
         SF.ZoneTool.start()

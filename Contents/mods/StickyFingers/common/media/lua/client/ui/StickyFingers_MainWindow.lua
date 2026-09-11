@@ -4,6 +4,12 @@
     ISCollapsableWindow holding the master switch, the five source toggles,
     a scan-range control, and a tab panel (Tagged / Search / Zones).
 
+    Layout is done in :layout(), called from :prerender() every frame, so the
+    window and its children reflow correctly when resized. ISTickBox auto-sizes
+    its own height as options are added (boxSize == constructor height), so we
+    read its real height back rather than guessing — that was the source-list /
+    tab overlap.
+
     Opened via keybind or the inventory context menu (SF.UI.toggleMainWindow).
 ]]
 
@@ -18,6 +24,7 @@ SF.UI = SF.UI or {}
 
 local PAD = 10
 local ROW = 22
+local CHECK = 18   -- tick-square size (also the tickbox constructor height)
 
 SFMainWindow = ISCollapsableWindow:derive("SFMainWindow")
 
@@ -27,38 +34,28 @@ function SFMainWindow:new(x, y, w, h)
     self.__index = self
     o.title = "Sticky Fingers"
     o.resizable = true
-    o:setResizable(true)
     o.minimumWidth = 320
-    o.minimumHeight = 380
+    o.minimumHeight = 400
     return o
 end
 
 function SFMainWindow:createChildren()
     ISCollapsableWindow.createChildren(self)
 
-    local w = self:getWidth()
-    local top = self:titleBarHeight()
-    local y = top + PAD
-
-    -- Master switch --------------------------------------------------
-    self.masterTick = ISTickBox:new(PAD, y, w - PAD * 2, ROW, "", self, SFMainWindow.onToggleMaster)
+    -- Master switch
+    self.masterTick = ISTickBox:new(PAD, 0, 200, CHECK, "", self, SFMainWindow.onToggleMaster)
     self.masterTick:initialise()
     self.masterTick:instantiate()
     self.masterTick:addOption("Auto-looting enabled (master switch)")
     self.masterTick:setSelected(1, SF.isMasterEnabled())
     self:addChild(self.masterTick)
-    y = y + ROW + 6
 
-    -- Sources --------------------------------------------------------
-    self.srcLabel = ISLabel:new(PAD, y, 18, "Loot from these sources:", 1, 1, 1, 1, UIFont.Small, true)
+    -- Sources
+    self.srcLabel = ISLabel:new(PAD, 0, 18, "Loot from these sources:", 1, 1, 1, 1, UIFont.Small, true)
     self.srcLabel:initialise()
     self:addChild(self.srcLabel)
-    y = y + 20
 
-    -- NOTE: ISTickBox sizes each tick square from the widget height, so this
-    -- must be a single-row height. The box lays its options out downward on its
-    -- own; we reserve #keys*ROW of vertical space below for the tabs.
-    self.srcTick = ISTickBox:new(PAD, y, w - PAD * 2, ROW, "", self, SFMainWindow.onToggleSource)
+    self.srcTick = ISTickBox:new(PAD, 0, 200, CHECK, "", self, SFMainWindow.onToggleSource)
     self.srcTick:initialise()
     self.srcTick:instantiate()
     for idx, key in ipairs(SF.SOURCE_KEYS) do
@@ -66,54 +63,80 @@ function SFMainWindow:createChildren()
         self.srcTick:setSelected(idx, SF.isSourceEnabled(key))
     end
     self:addChild(self.srcTick)
-    y = y + (#SF.SOURCE_KEYS * ROW) + 8
 
-    -- Scan range -----------------------------------------------------
-    self.rangeLabel = ISLabel:new(PAD, y, 18, "", 1, 1, 1, 1, UIFont.Small, true)
+    -- Scan range
+    self.rangeLabel = ISLabel:new(PAD, 0, 18, "", 1, 1, 1, 1, UIFont.Small, true)
     self.rangeLabel:initialise()
     self:addChild(self.rangeLabel)
 
-    local btnSize = 20
-    self.rangeMinus = ISButton:new(w - PAD - btnSize * 2 - 4, y, btnSize, btnSize, "-", self, SFMainWindow.onRangeMinus)
+    self.rangeMinus = ISButton:new(0, 0, 20, 20, "-", self, SFMainWindow.onRangeMinus)
     self.rangeMinus:initialise()
-    self.rangeMinus:setAnchorLeft(false)
-    self.rangeMinus:setAnchorRight(true)
     self:addChild(self.rangeMinus)
 
-    self.rangePlus = ISButton:new(w - PAD - btnSize, y, btnSize, btnSize, "+", self, SFMainWindow.onRangePlus)
+    self.rangePlus = ISButton:new(0, 0, 20, 20, "+", self, SFMainWindow.onRangePlus)
     self.rangePlus:initialise()
-    self.rangePlus:setAnchorLeft(false)
-    self.rangePlus:setAnchorRight(true)
     self:addChild(self.rangePlus)
     self:updateRangeLabel()
-    y = y + ROW + 8
 
-    -- Tabs ----------------------------------------------------------
-    local tabH = self:getHeight() - y - PAD
-    self.tabs = ISTabPanel:new(PAD, y, w - PAD * 2, tabH)
+    -- Tabs + panels
+    self.tabs = ISTabPanel:new(PAD, 0, 200, 200)
     self.tabs:initialise()
-    self.tabs:setAnchorRight(true)
-    self.tabs:setAnchorBottom(true)
     self:addChild(self.tabs)
 
-    local cw = w - PAD * 2
-    local ch = tabH - (self.tabs.tabHeight or 24)
-
-    self.taggedPanel = SFTaggedPanel:new(0, 0, cw, ch)
+    self.taggedPanel = SFTaggedPanel:new(0, 0, 200, 200)
     self.taggedPanel.mainWindow = self
     self.taggedPanel:initialise()
 
-    self.searchPanel = SFSearchPanel:new(0, 0, cw, ch)
+    self.searchPanel = SFSearchPanel:new(0, 0, 200, 200)
     self.searchPanel.mainWindow = self
     self.searchPanel:initialise()
 
-    self.zonePanel = SFZonePanel:new(0, 0, cw, ch)
+    self.zonePanel = SFZonePanel:new(0, 0, 200, 200)
     self.zonePanel.mainWindow = self
     self.zonePanel:initialise()
 
     self.tabs:addView("Tagged", self.taggedPanel)
     self.tabs:addView("Search", self.searchPanel)
     self.tabs:addView("Zones", self.zonePanel)
+
+    self:layout()
+end
+
+-- Reposition/resize every child from the current window size. Cheap; runs each
+-- frame from prerender so resizing is fully responsive.
+function SFMainWindow:layout()
+    local w = self:getWidth()
+    local y = self:titleBarHeight() + PAD
+
+    self.masterTick:setX(PAD); self.masterTick:setY(y)
+    y = y + self.masterTick:getHeight() + 8
+
+    self.srcLabel:setX(PAD); self.srcLabel:setY(y)
+    y = y + 20
+
+    self.srcTick:setX(PAD); self.srcTick:setY(y)
+    y = y + self.srcTick:getHeight() + 10   -- real auto-computed height
+
+    self.rangeLabel:setX(PAD); self.rangeLabel:setY(y + 2)
+    self.rangePlus:setX(w - PAD - 20);     self.rangePlus:setY(y)
+    self.rangeMinus:setX(w - PAD - 44);    self.rangeMinus:setY(y)
+    y = y + ROW + 10
+
+    self.tabs:setX(PAD); self.tabs:setY(y)
+    self.tabs:setWidth(w - PAD * 2)
+    self.tabs:setHeight(self:getHeight() - y - PAD)
+
+    local cw = self.tabs:getWidth()
+    local ch = self.tabs:getHeight() - (self.tabs.tabHeight or 24)
+    for _, p in ipairs({ self.taggedPanel, self.searchPanel, self.zonePanel }) do
+        p:setWidth(cw)
+        p:setHeight(ch)
+    end
+end
+
+function SFMainWindow:prerender()
+    ISCollapsableWindow.prerender(self)
+    self:layout()
 end
 
 ------------------------------------------------------------------
@@ -151,11 +174,6 @@ function SFMainWindow:onRangePlus()
     self:updateRangeLabel()
 end
 
--- Called by the search panel after tagging so the Tagged tab stays in sync.
-function SFMainWindow:refreshTagged()
-    if self.taggedPanel then self.taggedPanel:refresh() end
-end
-
 function SFMainWindow:close()
     self:setVisible(false)
     self:removeFromUIManager()
@@ -163,7 +181,7 @@ function SFMainWindow:close()
 end
 
 ------------------------------------------------------------------
--- Open / toggle entry point
+-- Open / toggle + external refresh
 ------------------------------------------------------------------
 
 function SF.UI.toggleMainWindow()
@@ -171,11 +189,21 @@ function SF.UI.toggleMainWindow()
         SF.UI.instance:close()
         return
     end
-    local w, h = 360, 460
+    local w, h = 380, 480
     local x = getCore():getScreenWidth() / 2 - w / 2
     local y = getCore():getScreenHeight() / 2 - h / 2
     local win = SFMainWindow:new(x, y, w, h)
     win:initialise()
     win:addToUIManager()
     SF.UI.instance = win
+end
+
+-- Called after any tag change so an open window updates live (context menu,
+-- search add, tagged remove all funnel through SF.Tags -> here).
+function SF.UI.refreshIfOpen()
+    local win = SF.UI.instance
+    if not win then return end
+    if win.taggedPanel then win.taggedPanel:refresh() end
+    if win.searchPanel then win.searchPanel:refresh() end
+    if win.zonePanel then win.zonePanel:refresh() end
 end

@@ -1,6 +1,6 @@
 name=Sticky Fingers (Auto Looter)
 id=StickyFingers
 description=Automatically pick up loot you care about from nearby containers, the ground, vehicles, corpses and animals as you pass by. Tag items via the right-click menu or a searchable list, toggle which source types are looted, pause everything with a master switch, and mark safe zones (like your base) to ignore.
-author=zbrec
+author=AstroDoge
 modversion=1.0.0
 poster=poster.png

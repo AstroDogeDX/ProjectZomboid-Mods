@@ -99,21 +99,19 @@ call warns once to the console and is skipped rather than breaking the loop).
 Load the mod, open the debug console, and confirm these behave — adjust the
 flagged line if a name differs in your build:
 
-- [ ] **Ground** — `IsoGridSquare:getWorldObjects()` returns dropped items;
-      `square:transmitRemoveItemFromSquare(obj)` removes the picked-up one.
-- [ ] **Containers** — `IsoGridSquare:getObjects()` + `IsoObject:getContainer()`
-      reach placed crates/counters/fridges.
-- [ ] **Corpses** — `IsoGridSquare:getDeadBodys()` (vanilla spelling) +
-      `IsoDeadBody:getContainer()`.
+- [x] **Ground** — `getWorldObjects()` + `transmitRemoveItemFromSquare()`.
+      *Confirmed working in-game.*
+- [x] **Containers** — `getObjects()` + `getContainerCount()`/
+      `getContainerByIndex()` (matches vanilla; catches multi-container objects).
+      *Confirmed working in-game.*
+- [x] **Corpses & Animals** — both are `IsoDeadBody` entries in
+      `IsoGridSquare:getStaticMovingObjects()`; `so:isAnimal()` separates the two
+      source toggles. Fixed to match vanilla `ISInventoryPage.lua`.
 - [ ] **Vehicles** — `getCell():getVehicles()`, `BaseVehicle:getPartCount()`,
-      `getPartByIndex(i):getItemContainer()`.
-- [ ] **Animals** — currently a best-effort stub (`getCell():getAnimals()` +
-      per-animal container). B42's animal API most likely needs the real
-      accessor wired in `StickyFingers_Looter.lua → collectAnimals`.
+      `getPartByIndex(i):getItemContainer()`. *Still to confirm in-game.*
 - [ ] **Zone picker** — `ISCoordConversion.ToWorld/ToScreen` argument order and
-      return values (world tile under the cursor).
-- [ ] **ISTickBox callbacks** — confirm the master/source toggles fire; the code
-      reads state back via `isSelected()` so arg order shouldn't matter.
+      return values (world tile under the cursor). *Zones confirmed working; the
+      corner-picker overlay projection is the unverified part.*
 
 See the `ENGINE-API CAUTION` comment blocks in the Lua files for the exact
 lines.

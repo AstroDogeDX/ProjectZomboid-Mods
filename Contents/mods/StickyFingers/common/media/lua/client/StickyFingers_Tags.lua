@@ -9,6 +9,14 @@
 SF = SF or {}
 SF.Tags = {}
 
+-- Notify an open management window that the tag set changed, so its lists
+-- refresh live (context menu, search add, and remove all funnel through here).
+local function notifyUI()
+    if SF.UI and SF.UI.refreshIfOpen then
+        SF.UI.refreshIfOpen()
+    end
+end
+
 -- Normalise anything we might be handed (InventoryItem, Item script, or a
 -- raw string) down to a fullType string like "Base.Nails".
 function SF.Tags.resolveType(itemOrType)
@@ -37,6 +45,7 @@ function SF.Tags.add(itemOrType)
     SF.getData().tags[fullType] = true
     SF.save()
     SF.log("Tagged", fullType)
+    notifyUI()
 end
 
 function SF.Tags.remove(itemOrType)
@@ -45,6 +54,7 @@ function SF.Tags.remove(itemOrType)
     SF.getData().tags[fullType] = nil
     SF.save()
     SF.log("Untagged", fullType)
+    notifyUI()
 end
 
 -- Returns the new tagged state (true = now tagged).
@@ -61,6 +71,7 @@ end
 function SF.Tags.clear()
     SF.getData().tags = {}
     SF.save()
+    notifyUI()
 end
 
 -- Human-readable display name for a fullType, falling back to the raw type.
