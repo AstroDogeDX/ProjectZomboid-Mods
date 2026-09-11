@@ -124,6 +124,59 @@ local function collectVehicleOnSquare(sq, player, out, seen)
 end
 
 ------------------------------------------------------------------
+-- Which squares to scan
+------------------------------------------------------------------
+
+local NEIGHBOURS = { {1,0}, {-1,0}, {0,1}, {0,-1}, {1,1}, {1,-1}, {-1,1}, {-1,-1} }
+
+-- Squares reachable from the player by walking, flood-filled outward up to
+-- `range` steps with canReachTo() on each adjacent step. This is how we avoid
+-- looting through walls: only squares connected by an unobstructed path are
+-- scanned. canReachTo() is only meaningful between *adjacent* squares (see
+-- luautils / ISEntityUI in the game source), so multi-tile reach must be built
+-- one step at a time rather than tested player->far-square directly.
+local function reachableSquares(center, range, cell)
+    local result  = { center }
+    local visited = { [center:getX() .. "," .. center:getY()] = true }
+    local z = center:getZ()
+    local queue = { { sq = center, d = 0 } }
+    local head = 1
+    while head <= #queue do
+        local node = queue[head]; head = head + 1
+        if node.d < range then
+            local csq = node.sq
+            for _, off in ipairs(NEIGHBOURS) do
+                local nx, ny = csq:getX() + off[1], csq:getY() + off[2]
+                local key = nx .. "," .. ny
+                if not visited[key] then
+                    local nsq = cell:getGridSquare(nx, ny, z)
+                    if nsq and csq:canReachTo(nsq) then
+                        visited[key] = true
+                        result[#result + 1] = nsq
+                        queue[#queue + 1] = { sq = nsq, d = node.d + 1 }
+                    end
+                end
+            end
+        end
+    end
+    return result
+end
+
+-- Plain bounding-box squares, ignoring walls (used only when the player turns
+-- off "respect walls" for the old cheaty behaviour).
+local function boxSquares(center, range, cell)
+    local result = {}
+    local cx, cy, cz = center:getX(), center:getY(), center:getZ()
+    for dx = -range, range do
+        for dy = -range, range do
+            local sq = cell:getGridSquare(cx + dx, cy + dy, cz)
+            if sq then result[#result + 1] = sq end
+        end
+    end
+    return result
+end
+
+------------------------------------------------------------------
 -- Scan orchestration
 ------------------------------------------------------------------
 
@@ -137,7 +190,6 @@ function SF.Looter.scan(player)
 
     local data  = SF.getData()
     local range = data.range or 2
-    local cx, cy, cz = center:getX(), center:getY(), center:getZ()
     local cell = getCell()
     local out = {}
 
@@ -151,27 +203,31 @@ function SF.Looter.scan(player)
     local seenVehicles   = {}
 
     if wantGround or wantContainers or wantCorpses or wantAnimals or wantVehicles then
-        for dx = -range, range do
-            for dy = -range, range do
-                local sq = cell:getGridSquare(cx + dx, cy + dy, cz)
-                if sq then
-                    if wantGround then
-                        safe("Ground", function() collectGround(sq, player, out) end)
-                    end
-                    if wantContainers then
-                        safe("Containers", function() collectContainersOnSquare(sq, player, out) end)
-                    end
-                    if wantCorpses or wantAnimals then
-                        safe("Corpses/Animals", function()
-                            collectStaticMovingObjects(sq, player, out, wantCorpses, wantAnimals)
-                        end)
-                    end
-                    if wantVehicles then
-                        safe("Vehicles", function()
-                            collectVehicleOnSquare(sq, player, out, seenVehicles)
-                        end)
-                    end
-                end
+        -- Respect walls by default: only scan squares the player could actually
+        -- walk to. Disable respectReach for the old scan-through-walls behaviour.
+        local squares
+        if data.respectReach == false then
+            squares = boxSquares(center, range, cell)
+        else
+            squares = reachableSquares(center, range, cell)
+        end
+
+        for _, sq in ipairs(squares) do
+            if wantGround then
+                safe("Ground", function() collectGround(sq, player, out) end)
+            end
+            if wantContainers then
+                safe("Containers", function() collectContainersOnSquare(sq, player, out) end)
+            end
+            if wantCorpses or wantAnimals then
+                safe("Corpses/Animals", function()
+                    collectStaticMovingObjects(sq, player, out, wantCorpses, wantAnimals)
+                end)
+            end
+            if wantVehicles then
+                safe("Vehicles", function()
+                    collectVehicleOnSquare(sq, player, out, seenVehicles)
+                end)
             end
         end
     end

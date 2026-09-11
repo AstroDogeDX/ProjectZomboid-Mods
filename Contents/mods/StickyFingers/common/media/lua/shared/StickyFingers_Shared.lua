@@ -26,6 +26,7 @@ SF.Defaults = {
     version = SF.VERSION,
     master  = true,                    -- master on/off switch
     range   = 2,                       -- scan radius in tiles around the player
+    respectReach = true,               -- only loot squares the player can walk to (no through-walls)
     sources = {
         Ground     = true,
         Containers = true,
@@ -144,6 +145,15 @@ end
 
 function SF.setMasterEnabled(enabled)
     SF.getData().master = (enabled == true)
+    SF.save()
+end
+
+function SF.isRespectReach()
+    return SF.getData().respectReach ~= false
+end
+
+function SF.setRespectReach(enabled)
+    SF.getData().respectReach = (enabled == true)
     SF.save()
 end
 

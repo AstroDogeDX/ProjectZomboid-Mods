@@ -23,6 +23,12 @@ items you care about, walk past a container, and they hop into your bag.
   settings (hotkey **K** by default).
 - **Ignore zones** — mark rectangular safe areas (e.g. your base) by picking two
   corners in the world; looting is suppressed while you stand inside one.
+- **Respect walls** (on by default) — only loots containers you could actually
+  walk to. Reachability is flood-filled outward from you one walkable step at a
+  time (using the same `canReachTo` test the vanilla loot window uses), so a
+  crate on the far side of a wall is never grabbed. Your scan *range* then means
+  "tiles of reachable path," not "through anything within X tiles." Turn it off
+  in the panel for the old scan-through-walls behaviour.
 
 ## Controls
 

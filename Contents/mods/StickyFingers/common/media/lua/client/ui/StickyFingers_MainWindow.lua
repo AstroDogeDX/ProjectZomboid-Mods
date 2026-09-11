@@ -50,6 +50,14 @@ function SFMainWindow:createChildren()
     self.masterTick:setSelected(1, SF.isMasterEnabled())
     self:addChild(self.masterTick)
 
+    -- Respect walls
+    self.reachTick = ISTickBox:new(PAD, 0, 200, CHECK, "", self, SFMainWindow.onToggleReach)
+    self.reachTick:initialise()
+    self.reachTick:instantiate()
+    self.reachTick:addOption("Respect walls (don't loot through them)")
+    self.reachTick:setSelected(1, SF.isRespectReach())
+    self:addChild(self.reachTick)
+
     -- Sources
     self.srcLabel = ISLabel:new(PAD, 0, 18, "Loot from these sources:", 1, 1, 1, 1, UIFont.Small, true)
     self.srcLabel:initialise()
@@ -109,7 +117,10 @@ function SFMainWindow:layout()
     local y = self:titleBarHeight() + PAD
 
     self.masterTick:setX(PAD); self.masterTick:setY(y)
-    y = y + self.masterTick:getHeight() + 8
+    y = y + self.masterTick:getHeight() + 6
+
+    self.reachTick:setX(PAD); self.reachTick:setY(y)
+    y = y + self.reachTick:getHeight() + 8
 
     self.srcLabel:setX(PAD); self.srcLabel:setY(y)
     y = y + 20
@@ -145,6 +156,10 @@ end
 
 function SFMainWindow:onToggleMaster()
     SF.setMasterEnabled(self.masterTick:isSelected(1))
+end
+
+function SFMainWindow:onToggleReach()
+    SF.setRespectReach(self.reachTick:isSelected(1))
 end
 
 function SFMainWindow:onToggleSource()
