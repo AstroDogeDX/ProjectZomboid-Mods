@@ -10,8 +10,8 @@ SF = SF or {}
 SF.ContextMenu = {}
 
 -- Callback: target is passed first by ISContextMenu, then our params.
-function SF.ContextMenu.onToggle(_player, fullType, displayName)
-    local nowTagged = SF.Tags.toggle(fullType)
+function SF.ContextMenu.onToggle(_player, key, displayName)
+    local nowTagged = SF.Tags.toggle(key)
     local msg = nowTagged
         and ("Auto-looting: " .. displayName)
         or  ("Stopped: " .. displayName)
@@ -25,8 +25,9 @@ function SF.ContextMenu.onOpenWindow(_player)
 end
 
 -- Reduce a context-menu selection (which may contain stacks/tables) to a
--- de-duplicated, ordered list of { type, name }.
-local function collectSelectedTypes(items)
+-- de-duplicated, ordered list of { key, name } grouped by display name — the
+-- same grouping the inventory uses, so selecting two variants shows one entry.
+local function collectSelectedGroups(items)
     local seen, ordered = {}, {}
     for i = 1, #items do
         local entry = items[i]
@@ -35,10 +36,10 @@ local function collectSelectedTypes(items)
             item = entry.items and entry.items[1] or nil
         end
         if item then
-            local ft = item:getFullType()
-            if ft and not seen[ft] then
-                seen[ft] = true
-                ordered[#ordered + 1] = { type = ft, name = item:getName() }
+            local key = item:getDisplayName()
+            if key and not seen[key] then
+                seen[key] = true
+                ordered[#ordered + 1] = { key = key, name = key }
             end
         end
     end
@@ -47,16 +48,16 @@ end
 
 function SF.ContextMenu.onFill(playerNum, context, items)
     local player = getSpecificPlayer(playerNum)
-    local types = collectSelectedTypes(items)
+    local groups = collectSelectedGroups(items)
 
     local parent = context:addOption("Sticky Fingers", nil, nil)
     local sub = ISContextMenu:getNew(context)
     context:addSubMenu(parent, sub)
 
-    for _, t in ipairs(types) do
-        local tagged = SF.Tags.isTagged(t.type)
-        local label = (tagged and "Stop auto-looting " or "Auto-loot ") .. t.name
-        local opt = sub:addOption(label, player, SF.ContextMenu.onToggle, t.type, t.name)
+    for _, g in ipairs(groups) do
+        local tagged = SF.Tags.isTagged(g.key)
+        local label = (tagged and "Stop auto-looting " or "Auto-loot ") .. g.name
+        local opt = sub:addOption(label, player, SF.ContextMenu.onToggle, g.key, g.name)
         -- Reflect current state with a checkmark where the engine supports it.
         if sub.setOptionChecked then
             sub:setOptionChecked(opt, tagged)

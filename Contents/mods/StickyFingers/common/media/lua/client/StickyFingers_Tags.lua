@@ -1,9 +1,14 @@
 --[[
     Sticky Fingers — tag manager
     ------------------------------------------------------------------
-    A "tag" marks an item *type* (fullType, e.g. "Base.556Box") for
-    auto-looting. Tags are stored as a set in config.tags for O(1) lookup
-    during the proximity scan.
+    A "tag" marks an item for auto-looting by its DISPLAY NAME, which is the
+    exact key the vanilla inventory uses to group stacks
+    (ISInventoryPane keys itemsByName on item:getDisplayName()). Tagging one
+    variant therefore auto-collects every variant that groups with it in the
+    inventory — e.g. tagging a black "Digital Watch" also grabs the red one,
+    and tagging one "Energy Drink" grabs every branded variant.
+
+    Stored as a set: config.tags[displayName] = true, for O(1) lookup.
 ]]
 
 SF = SF or {}
@@ -17,43 +22,35 @@ local function notifyUI()
     end
 end
 
--- Normalise anything we might be handed (InventoryItem, Item script, or a
--- raw string) down to a fullType string like "Base.Nails".
-function SF.Tags.resolveType(itemOrType)
-    if type(itemOrType) == "string" then
-        return itemOrType
-    end
-    if itemOrType == nil then
-        return nil
-    end
-    -- InventoryItem and Item script both expose getFullType() in B42.
-    if itemOrType.getFullType then
-        return itemOrType:getFullType()
-    end
+-- Normalise anything we might be handed (InventoryItem, Item script, or a raw
+-- display-name string) down to the group key (a display name).
+function SF.Tags.keyOf(itemOrType)
+    if itemOrType == nil then return nil end
+    if type(itemOrType) == "string" then return itemOrType end
+    if itemOrType.getDisplayName then return itemOrType:getDisplayName() end
     return nil
 end
 
 function SF.Tags.isTagged(itemOrType)
-    local fullType = SF.Tags.resolveType(itemOrType)
-    if not fullType then return false end
-    return SF.getData().tags[fullType] == true
+    local key = SF.Tags.keyOf(itemOrType)
+    return key ~= nil and SF.getData().tags[key] == true
 end
 
 function SF.Tags.add(itemOrType)
-    local fullType = SF.Tags.resolveType(itemOrType)
-    if not fullType then return end
-    SF.getData().tags[fullType] = true
+    local key = SF.Tags.keyOf(itemOrType)
+    if not key then return end
+    SF.getData().tags[key] = true
     SF.save()
-    SF.log("Tagged", fullType)
+    SF.log("Tagged", key)
     notifyUI()
 end
 
 function SF.Tags.remove(itemOrType)
-    local fullType = SF.Tags.resolveType(itemOrType)
-    if not fullType then return end
-    SF.getData().tags[fullType] = nil
+    local key = SF.Tags.keyOf(itemOrType)
+    if not key then return end
+    SF.getData().tags[key] = nil
     SF.save()
-    SF.log("Untagged", fullType)
+    SF.log("Untagged", key)
     notifyUI()
 end
 
@@ -74,21 +71,12 @@ function SF.Tags.clear()
     notifyUI()
 end
 
--- Human-readable display name for a fullType, falling back to the raw type.
-function SF.Tags.displayName(fullType)
-    local script = getScriptManager():getItem(fullType)
-    if script then
-        return script:getDisplayName()
-    end
-    return fullType
-end
-
--- Returns a sorted array of { type = fullType, name = displayName } for UI use.
+-- Sorted array of { key = displayName, name = displayName } for UI lists.
 function SF.Tags.getSortedList()
     local list = {}
-    for fullType, on in pairs(SF.getData().tags) do
+    for key, on in pairs(SF.getData().tags) do
         if on then
-            list[#list + 1] = { type = fullType, name = SF.Tags.displayName(fullType) }
+            list[#list + 1] = { key = key, name = key }
         end
     end
     table.sort(list, function(a, b) return a.name:lower() < b.name:lower() end)

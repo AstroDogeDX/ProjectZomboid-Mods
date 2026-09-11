@@ -14,7 +14,7 @@
 SF = SF or {}
 
 SF.MOD_ID   = "StickyFingers"
-SF.VERSION  = 1            -- config schema version, bump when Defaults change shape
+SF.VERSION  = 2            -- config schema version, bump when Defaults change shape
 SF.DEBUG    = false        -- flip on for verbose console logging
 
 -- Canonical source-type keys. Order matters for UI display.
@@ -106,7 +106,24 @@ end
 -- evolves. Called only when stored version < SF.VERSION.
 function SF.migrate(data, fromVersion)
     SF.log("Migrating config from version", fromVersion, "to", SF.VERSION)
-    -- (no migrations yet)
+
+    -- v1 -> v2: tags were keyed by fullType (e.g. "Base.556Box"); they are now
+    -- keyed by display name so variants group like the inventory does. Convert
+    -- each stored fullType to its item's display name.
+    if fromVersion < 2 then
+        local converted = {}
+        for key, on in pairs(data.tags or {}) do
+            if on then
+                local newKey = key
+                if type(key) == "string" and key:find("%.") then
+                    local script = getScriptManager():getItem(key)
+                    if script then newKey = script:getDisplayName() end
+                end
+                converted[newKey] = true
+            end
+        end
+        data.tags = converted
+    end
 end
 
 -- Persist current config. In SP this is mostly a no-op marker (ModData is

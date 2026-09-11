@@ -83,7 +83,7 @@ end
 function SFTaggedPanel:onRemove()
     local item = self.list.items[self.list.selected]
     if item and item.item then
-        SF.Tags.remove(item.item.type)   -- triggers SF.UI.refreshIfOpen()
+        SF.Tags.remove(item.item.key)   -- triggers SF.UI.refreshIfOpen()
     end
 end
 
@@ -155,29 +155,43 @@ function SFSearchPanel:refresh()
     query = query and query:lower():gsub("^%s*(.-)%s*$", "%1") or ""
     if #query < MIN_QUERY then return end
 
+    -- Group results by display name (matching how items are tagged/grouped),
+    -- counting how many item types collapse into each name.
     local all = getScriptManager():getAllItems()
-    local count = 0
+    local groups, order = {}, {}
     for i = 0, all:size() - 1 do
-        if count >= MAX_RESULTS then break end
         local script = all:get(i)
         local name = script:getDisplayName()
         local fullType = script:getFullName()  -- "Module.Type"
         if name and fullType then
             local hay = (name .. " " .. fullType):lower()
             if hay:find(query, 1, true) then
-                local tagged = SF.Tags.isTagged(fullType)
-                local label = (tagged and "* " or "") .. name .. "  (" .. fullType .. ")"
-                self.list:addItem(label, { type = fullType, name = name })
-                count = count + 1
+                if groups[name] then
+                    groups[name] = groups[name] + 1
+                else
+                    groups[name] = 1
+                    order[#order + 1] = name
+                end
             end
         end
+    end
+
+    table.sort(order, function(a, b) return a:lower() < b:lower() end)
+
+    for i = 1, math.min(#order, MAX_RESULTS) do
+        local name = order[i]
+        local variants = groups[name]
+        local tagged = SF.Tags.isTagged(name)
+        local suffix = variants > 1 and ("  (" .. variants .. " variants)") or ""
+        local label = (tagged and "* " or "") .. name .. suffix
+        self.list:addItem(label, { key = name })
     end
 end
 
 function SFSearchPanel:onAdd()
     local item = self.list.items[self.list.selected]
     if item and item.item then
-        SF.Tags.add(item.item.type)   -- triggers SF.UI.refreshIfOpen() (updates both lists)
+        SF.Tags.add(item.item.key)   -- triggers SF.UI.refreshIfOpen() (updates both lists)
     end
 end
 

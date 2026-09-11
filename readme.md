@@ -12,6 +12,9 @@ items you care about, walk past a container, and they hop into your bag.
 
 - **Right-click tagging** — right-click any item → *Sticky Fingers* →
   *Auto-loot X* to toggle it on/off.
+- **Variant grouping** — items are tagged by *display name*, the same key the
+  vanilla inventory uses to group stacks. Tagging one variant collects them all
+  (e.g. black + red *Digital Watch*, or every branded *Energy Drink*).
 - **Source toggles** — independently enable/disable looting from **Ground,
   Containers, Vehicles, Corpses, Animals**.
 - **Management window** — searchable list of *all* game items to tag ahead of
