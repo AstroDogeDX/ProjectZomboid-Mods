@@ -50,10 +50,13 @@ local function collectFromContainer(container, player, out)
     for i = 0, items:size() - 1 do
         local item = items:get(i)
         if item and SF.Tags.isTagged(item) then
-            out[#out + 1] = function()
-                container:Remove(item)
-                player:getInventory():AddItem(item)
-            end
+            out[#out + 1] = {
+                weight = item:getUnequippedWeight(),
+                grab = function()
+                    container:Remove(item)
+                    player:getInventory():AddItem(item)
+                end,
+            }
         end
     end
 end
@@ -65,10 +68,13 @@ local function collectGround(sq, player, out)
         local wobj = worldObjs:get(i)
         local item = wobj and wobj:getItem()
         if item and SF.Tags.isTagged(item) then
-            out[#out + 1] = function()
-                sq:transmitRemoveItemFromSquare(wobj)
-                player:getInventory():AddItem(item)
-            end
+            out[#out + 1] = {
+                weight = item:getUnequippedWeight(),
+                grab = function()
+                    sq:transmitRemoveItemFromSquare(wobj)
+                    player:getInventory():AddItem(item)
+                end,
+            }
         end
     end
 end
@@ -232,16 +238,33 @@ function SF.Looter.scan(player)
         end
     end
 
-    -- Execute grabs (capped).
+    -- Optional carry-weight cap. limit is a fraction of the player's *current*
+    -- max weight (which scales with Strength), so a percent > 100 permits
+    -- overcarry. We track a running total (seeded from current encumbrance) and
+    -- skip any item that wouldn't fit, so lighter items can still be grabbed
+    -- when a heavy one is refused.
+    local playerInv = player:getInventory()
+    local limit = nil
+    if SF.isRespectWeight() then
+        limit = player:getMaxWeight() * (SF.getWeightPercent() / 100)
+    end
+    local currentWeight = limit and playerInv:getCapacityWeight() or 0
+
+    -- Execute grabs (capped by count and, optionally, by weight).
     local grabbed = 0
-    for _, doGrab in ipairs(out) do
+    for _, entry in ipairs(out) do
         if grabbed >= MAX_GRABS_PER_SCAN then break end
-        local ok, err = pcall(doGrab)
-        if ok then
-            grabbed = grabbed + 1
-        elseif not warned["grab"] then
-            warned["grab"] = true
-            SF.warn("Grab failed:", err)
+        if limit and (currentWeight + entry.weight) > limit then
+            -- would exceed the carry limit; skip this item, keep checking others
+        else
+            local ok, err = pcall(entry.grab)
+            if ok then
+                grabbed = grabbed + 1
+                currentWeight = currentWeight + entry.weight
+            elseif not warned["grab"] then
+                warned["grab"] = true
+                SF.warn("Grab failed:", err)
+            end
         end
     end
 

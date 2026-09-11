@@ -27,6 +27,8 @@ SF.Defaults = {
     master  = true,                    -- master on/off switch
     range   = 2,                       -- scan radius in tiles around the player
     respectReach = true,               -- only loot squares the player can walk to (no through-walls)
+    respectWeight = false,             -- stop looting once at/over the carry limit
+    weightPercent = 100,               -- carry limit as % of current max weight (100 = capacity, >100 = overcarry)
     sources = {
         Ground     = true,
         Containers = true,
@@ -155,6 +157,27 @@ end
 function SF.setRespectReach(enabled)
     SF.getData().respectReach = (enabled == true)
     SF.save()
+end
+
+function SF.isRespectWeight()
+    return SF.getData().respectWeight == true
+end
+
+function SF.setRespectWeight(enabled)
+    SF.getData().respectWeight = (enabled == true)
+    SF.save()
+end
+
+function SF.getWeightPercent()
+    return SF.getData().weightPercent or 100
+end
+
+-- Clamped to a sane band: never below 50% (still useful), capped at 300%.
+function SF.setWeightPercent(percent)
+    percent = math.max(50, math.min(300, math.floor(percent + 0.5)))
+    SF.getData().weightPercent = percent
+    SF.save()
+    return percent
 end
 
 function SF.isSourceEnabled(sourceKey)

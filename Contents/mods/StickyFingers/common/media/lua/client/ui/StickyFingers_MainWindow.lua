@@ -86,6 +86,27 @@ function SFMainWindow:createChildren()
     self:addChild(self.rangePlus)
     self:updateRangeLabel()
 
+    -- Carry-weight limit
+    self.weightTick = ISTickBox:new(PAD, 0, 260, CHECK, "", self, SFMainWindow.onToggleWeight)
+    self.weightTick:initialise()
+    self.weightTick:instantiate()
+    self.weightTick:addOption("Stop looting when over the carry limit")
+    self.weightTick:setSelected(1, SF.isRespectWeight())
+    self:addChild(self.weightTick)
+
+    self.weightLabel = ISLabel:new(PAD, 0, 18, "", 1, 1, 1, 1, UIFont.Small, true)
+    self.weightLabel:initialise()
+    self:addChild(self.weightLabel)
+
+    self.weightMinus = ISButton:new(0, 0, 20, 20, "-", self, SFMainWindow.onWeightMinus)
+    self.weightMinus:initialise()
+    self:addChild(self.weightMinus)
+
+    self.weightPlus = ISButton:new(0, 0, 20, 20, "+", self, SFMainWindow.onWeightPlus)
+    self.weightPlus:initialise()
+    self:addChild(self.weightPlus)
+    self:updateWeightLabel()
+
     -- Tabs + panels
     self.tabs = ISTabPanel:new(PAD, 0, 200, 200)
     self.tabs:initialise()
@@ -131,6 +152,14 @@ function SFMainWindow:layout()
     self.rangeLabel:setX(PAD); self.rangeLabel:setY(y + 2)
     self.rangePlus:setX(w - PAD - 20);     self.rangePlus:setY(y)
     self.rangeMinus:setX(w - PAD - 44);    self.rangeMinus:setY(y)
+    y = y + ROW + 10
+
+    self.weightTick:setX(PAD); self.weightTick:setY(y)
+    y = y + self.weightTick:getHeight() + 6
+
+    self.weightLabel:setX(PAD); self.weightLabel:setY(y + 2)
+    self.weightPlus:setX(w - PAD - 20);    self.weightPlus:setY(y)
+    self.weightMinus:setX(w - PAD - 44);   self.weightMinus:setY(y)
     y = y + ROW + 10
 
     self.tabs:setX(PAD); self.tabs:setY(y)
@@ -189,6 +218,24 @@ function SFMainWindow:onRangePlus()
     self:updateRangeLabel()
 end
 
+function SFMainWindow:onToggleWeight()
+    SF.setRespectWeight(self.weightTick:isSelected(1))
+end
+
+function SFMainWindow:updateWeightLabel()
+    self.weightLabel:setName("Carry limit: " .. SF.getWeightPercent() .. "% of max")
+end
+
+function SFMainWindow:onWeightMinus()
+    SF.setWeightPercent(SF.getWeightPercent() - 10)
+    self:updateWeightLabel()
+end
+
+function SFMainWindow:onWeightPlus()
+    SF.setWeightPercent(SF.getWeightPercent() + 10)
+    self:updateWeightLabel()
+end
+
 function SFMainWindow:close()
     self:setVisible(false)
     self:removeFromUIManager()
@@ -204,7 +251,7 @@ function SF.UI.toggleMainWindow()
         SF.UI.instance:close()
         return
     end
-    local w, h = 380, 480
+    local w, h = 380, 540
     local x = getCore():getScreenWidth() / 2 - w / 2
     local y = getCore():getScreenHeight() / 2 - h / 2
     local win = SFMainWindow:new(x, y, w, h)

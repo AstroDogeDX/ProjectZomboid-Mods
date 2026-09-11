@@ -21,6 +21,11 @@ items you care about, walk past a container, and they hop into your bag.
   time, plus a list of everything you've already tagged.
 - **Master switch** — pause/resume all auto-looting without losing your
   settings (hotkey **K** by default).
+- **Carry-weight limit** (optional) — off by default (grab regardless of
+  weight). Enable it to stop auto-looting at your carry limit, with an
+  adjustable cap from **50%–300%** of your *current* max weight — so as Strength
+  raises your capacity, the limit scales with it. Items that wouldn't fit are
+  skipped while lighter ones can still be grabbed.
 - **Ignore zones** — mark rectangular safe areas (e.g. your base) by picking two
   corners in the world; looting is suppressed while you stand inside one.
 - **Respect walls** (on by default) — only loots containers you could actually
