@@ -63,7 +63,8 @@ function SFTaggedPanel:createChildren()
     self.maxEntry:initialise()
     self.maxEntry:instantiate()
     self.maxEntry:setOnlyNumbers(true)
-    self.maxEntry.onTextChangeFunction = function() self:onMaxChanged() end
+    -- NB: we poll the text in prerender rather than using onTextChange, which
+    -- fires before the keystroke is committed (getText() would lag by one char).
     self:addChild(self.maxEntry)
 
     self.autoTick = ISTickBox:new(PAD, 0, 240, 18, "", self, SFTaggedPanel.onAutoChanged)
@@ -108,6 +109,7 @@ end
 function SFTaggedPanel:prerender()
     ISPanel.prerender(self)
     self:syncEditor()
+    self:pollMax()
     self:layout()
 end
 
@@ -125,6 +127,20 @@ function SFTaggedPanel:syncEditor()
         self.maxEntry:setText("")
         self.autoTick:setSelected(1, false)
     end
+    -- Baseline so pollMax doesn't re-apply the value we just loaded.
+    self.appliedMaxText = self.maxEntry:getText()
+end
+
+-- Apply the (settled) contents of the max box to the selected entry. Runs each
+-- frame; only acts when the text has actually changed since last applied.
+function SFTaggedPanel:pollMax()
+    if not self.editKey then return end
+    local txt = self.maxEntry:getText()
+    if txt ~= self.appliedMaxText then
+        self.appliedMaxText = txt
+        SF.Tags.setMax(self.editKey, tonumber(txt))
+        self:updateSelectedRowText()
+    end
 end
 
 -- Update the selected row's inline text after an edit (no list rebuild, so the
@@ -136,12 +152,6 @@ function SFTaggedPanel:updateSelectedRowText()
     item.item.max = e and e.max or nil
     item.item.autoRemove = e and e.autoRemove == true
     item.text = item.item.name .. limitText(item.item.max, item.item.autoRemove)
-end
-
-function SFTaggedPanel:onMaxChanged()
-    if not self.editKey then return end
-    SF.Tags.setMax(self.editKey, tonumber(self.maxEntry:getText()))
-    self:updateSelectedRowText()
 end
 
 function SFTaggedPanel:onAutoChanged()
@@ -193,7 +203,9 @@ function SFSearchPanel:createChildren()
     self.entry = ISTextEntryBox:new("", PAD, PAD, 100, BTN_H)
     self.entry:initialise()
     self.entry:instantiate()
-    self.entry.onTextChangeFunction = function() self:refresh() end
+    -- Poll the query in prerender rather than onTextChange, which fires before
+    -- the keystroke is committed (results would trail by one character).
+    self.lastQuery = nil
     self:addChild(self.entry)
 
     self.list = ISScrollingListBox:new(PAD, PAD, 100, 100)
@@ -223,6 +235,12 @@ end
 
 function SFSearchPanel:prerender()
     ISPanel.prerender(self)
+    -- Re-filter only when the (settled) query text actually changes.
+    local q = self.entry:getText() or ""
+    if q ~= self.lastQuery then
+        self.lastQuery = q
+        self:refresh()
+    end
     self:layout()
 end
 
@@ -230,8 +248,7 @@ function SFSearchPanel:refresh()
     if not self.list then return end
     self.list:clear()
 
-    local query = self.entry:getText()
-    query = query and query:lower():gsub("^%s*(.-)%s*$", "%1") or ""
+    local query = (self.lastQuery or self.entry:getText() or ""):lower():gsub("^%s*(.-)%s*$", "%1")
     if #query < MIN_QUERY then return end
 
     -- Group results by display name (matching how items are tagged/grouped),
