@@ -1,0 +1,1 @@
+Clean and configurable auto looter mod for Project Zomboid (WIP)
