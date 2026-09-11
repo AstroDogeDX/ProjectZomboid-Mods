@@ -86,7 +86,7 @@ local function collectContainersOnSquare(sq, player, out)
     if not objects then return end
     for i = 0, objects:size() - 1 do
         local obj = objects:get(i)
-        if obj then
+        if obj and not SF.Excludes.isObjectExcluded(obj) then
             for c = 0, obj:getContainerCount() - 1 do
                 collectFromContainer(obj:getContainerByIndex(c), player, out)
             end
@@ -120,6 +120,7 @@ local function collectVehicleOnSquare(sq, player, out, seen)
     local veh = sq:getVehicleContainer()
     if not veh or seen[veh] then return end
     seen[veh] = true
+    if SF.Excludes.isVehicleExcluded(veh) then return end
     for partIndex = 1, veh:getPartCount() do
         local part = veh:getPartByIndex(partIndex - 1)
         local container = part and part:getItemContainer()

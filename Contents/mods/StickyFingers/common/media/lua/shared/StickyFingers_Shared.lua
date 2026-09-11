@@ -36,8 +36,12 @@ SF.Defaults = {
         Corpses    = false,
         Animals    = false,
     },
-    tags  = {},                        -- set of tagged item types: [fullType] = true
+    tags  = {},                        -- set of tagged item display-names: [name] = true
     zones = {},                        -- array of { x1, y1, x2, y2 } world-tile rectangles
+    excludes = {                       -- objects/vehicles to never loot from
+        containers = {},               -- [objectKey] = friendly label
+        vehicles   = {},               -- [vehicleId (string)] = friendly label
+    },
 }
 
 ------------------------------------------------------------------

@@ -124,9 +124,14 @@ function SFMainWindow:createChildren()
     self.zonePanel.mainWindow = self
     self.zonePanel:initialise()
 
+    self.excludePanel = SFExcludePanel:new(0, 0, 200, 200)
+    self.excludePanel.mainWindow = self
+    self.excludePanel:initialise()
+
     self.tabs:addView("Tagged", self.taggedPanel)
     self.tabs:addView("Search", self.searchPanel)
     self.tabs:addView("Zones", self.zonePanel)
+    self.tabs:addView("Excludes", self.excludePanel)
 
     self:layout()
 end
@@ -168,7 +173,7 @@ function SFMainWindow:layout()
 
     local cw = self.tabs:getWidth()
     local ch = self.tabs:getHeight() - (self.tabs.tabHeight or 24)
-    for _, p in ipairs({ self.taggedPanel, self.searchPanel, self.zonePanel }) do
+    for _, p in ipairs({ self.taggedPanel, self.searchPanel, self.zonePanel, self.excludePanel }) do
         p:setWidth(cw)
         p:setHeight(ch)
     end
@@ -268,4 +273,5 @@ function SF.UI.refreshIfOpen()
     if win.taggedPanel then win.taggedPanel:refresh() end
     if win.searchPanel then win.searchPanel:refresh() end
     if win.zonePanel then win.zonePanel:refresh() end
+    if win.excludePanel then win.excludePanel:refresh() end
 end

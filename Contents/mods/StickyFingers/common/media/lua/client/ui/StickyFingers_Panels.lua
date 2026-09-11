@@ -15,6 +15,7 @@ require "ISUI/ISPanel"
 require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
 require "ISUI/ISTextEntryBox"
+require "ISUI/ISLabel"
 
 local PAD = 8
 local BTN_H = 24
@@ -267,6 +268,82 @@ function SFZonePanel:onRemove()
     local item = self.list.items[self.list.selected]
     if item and item.item then
         SF.Zones.removeAt(item.item.index)
+        self:refresh()
+    end
+end
+
+------------------------------------------------------------------
+-- Exclusions panel (containers + vehicles)
+------------------------------------------------------------------
+
+SFExcludePanel = ISPanel:derive("SFExcludePanel")
+
+function SFExcludePanel:new(x, y, w, h)
+    local o = ISPanel:new(x, y, w, h)
+    setmetatable(o, self)
+    self.__index = self
+    o.background = false
+    return o
+end
+
+function SFExcludePanel:createChildren()
+    ISPanel.createChildren(self)
+
+    self.hint = ISLabel:new(PAD, PAD, 18,
+        "Right-click a container or vehicle in the world to exclude it.",
+        0.6, 0.6, 0.6, 1, UIFont.NewSmall, true)
+    self.hint:initialise()
+    self:addChild(self.hint)
+
+    self.list = ISScrollingListBox:new(PAD, PAD, 100, 100)
+    self.list:initialise()
+    self.list:instantiate()
+    self.list.itemheight = 22
+    self.list.font = UIFont.NewSmall
+    self:addChild(self.list)
+
+    self.removeBtn = ISButton:new(0, 0, 100, BTN_H, "Remove selected", self, SFExcludePanel.onRemove)
+    self.removeBtn:initialise()
+    self:addChild(self.removeBtn)
+
+    self:layout()
+    self:refresh()
+end
+
+function SFExcludePanel:layout()
+    local w, h = self:getWidth(), self:getHeight()
+    local top = PAD + 16
+    self.hint:setX(PAD); self.hint:setY(PAD)
+    self.list:setX(PAD); self.list:setY(top)
+    self.list:setWidth(w - PAD * 2)
+    self.list:setHeight(h - top - PAD * 2 - BTN_H)
+    self.removeBtn:setX(PAD); self.removeBtn:setY(h - PAD - BTN_H); self.removeBtn:setWidth(w - PAD * 2)
+end
+
+function SFExcludePanel:prerender()
+    ISPanel.prerender(self)
+    self:layout()
+end
+
+function SFExcludePanel:refresh()
+    if not self.list then return end
+    self.list:clear()
+    for _, c in ipairs(SF.Excludes.listContainers()) do
+        self.list:addItem("[Container] " .. c.label, { kind = "container", key = c.key })
+    end
+    for _, v in ipairs(SF.Excludes.listVehicles()) do
+        self.list:addItem("[Vehicle] " .. v.label, { kind = "vehicle", id = v.id })
+    end
+end
+
+function SFExcludePanel:onRemove()
+    local item = self.list.items[self.list.selected]
+    if item and item.item then
+        if item.item.kind == "container" then
+            SF.Excludes.removeContainer(item.item.key)
+        else
+            SF.Excludes.removeVehicle(item.item.id)
+        end
         self:refresh()
     end
 end
