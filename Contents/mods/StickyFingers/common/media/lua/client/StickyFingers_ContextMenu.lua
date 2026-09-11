@@ -25,8 +25,9 @@ function SF.ContextMenu.onOpenWindow(_player)
 end
 
 -- Reduce a context-menu selection (which may contain stacks/tables) to a
--- de-duplicated, ordered list of { key, name } grouped by display name — the
--- same grouping the inventory uses, so selecting two variants shows one entry.
+-- de-duplicated, ordered list of { key, name } grouped by inventory name — the
+-- same grouping the inventory uses, so selecting two variants shows one entry
+-- (and an "Empty X" is its own entry, distinct from the full "X").
 local function collectSelectedGroups(items)
     local seen, ordered = {}, {}
     for i = 1, #items do
@@ -36,7 +37,7 @@ local function collectSelectedGroups(items)
             item = entry.items and entry.items[1] or nil
         end
         if item then
-            local key = item:getDisplayName()
+            local key = SF.Tags.keyOf(item)
             if key and not seen[key] then
                 seen[key] = true
                 ordered[#ordered + 1] = { key = key, name = key }

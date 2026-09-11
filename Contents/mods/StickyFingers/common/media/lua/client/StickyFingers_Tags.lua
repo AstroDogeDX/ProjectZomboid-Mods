@@ -1,9 +1,16 @@
 --[[
     Sticky Fingers — tag manager
     ------------------------------------------------------------------
-    A "tag" marks an item for auto-looting by its DISPLAY NAME (the same key the
-    vanilla inventory groups stacks by), so tagging one variant collects them
-    all (see the variant-grouping notes elsewhere).
+    A "tag" marks an item for auto-looting by its inventory NAME — the exact key
+    the vanilla inventory stacks by (ISInventoryPane keys stacks on
+    item:getName(player), not the base display name). So tagging one variant
+    collects everything that stacks with it, and — crucially — a depleted item
+    that the game renames (e.g. "Empty Cleaning Liquid Bottle" vs "Cleaning
+    Liquid Bottle") is treated as a DIFFERENT entry, so it isn't looted just
+    because the full version is tagged.
+
+    For an Item *script* (search tab) only the base display name is available;
+    that equals getName() for a normal/full item, so tagging still matches.
 
     Each tag carries per-item settings:
         config.tags[displayName] = { max = number|nil, autoRemove = bool }
@@ -25,10 +32,15 @@ local function notifyUI()
     end
 end
 
--- InventoryItem, Item script, or raw string -> group key (display name).
+-- InventoryItem, Item script, or raw string -> group key.
+--   InventoryItem : getName() — the runtime name the inventory stacks by
+--                   (carries "Empty" prefix, custom names, etc.).
+--   Item script   : getDisplayName() — base name (== getName() when full).
+--   string        : already a key.
 function SF.Tags.keyOf(itemOrType)
     if itemOrType == nil then return nil end
     if type(itemOrType) == "string" then return itemOrType end
+    if instanceof(itemOrType, "InventoryItem") then return itemOrType:getName() end
     if itemOrType.getDisplayName then return itemOrType:getDisplayName() end
     return nil
 end
@@ -132,9 +144,10 @@ function SF.Tags.hasLimits()
     return false
 end
 
--- Count how many of each TAGGED display name the player currently carries
--- (whole inventory, bags included). Returns a { [displayName] = count } map
--- restricted to tagged names so it stays small.
+-- Count how many of each TAGGED key the player currently carries (whole
+-- inventory, bags included). Keyed by the same getName() the tags use, so an
+-- "Empty X" is counted separately from "X". Restricted to tagged keys so it
+-- stays small.
 function SF.Tags.buildInventoryCounts(player)
     local counts = {}
     local tags = SF.getData().tags
@@ -145,7 +158,7 @@ function SF.Tags.buildInventoryCounts(player)
         for i = 0, items:size() - 1 do
             local it = items:get(i)
             if it then
-                local nm = it:getDisplayName()
+                local nm = SF.Tags.keyOf(it)
                 if nm and tags[nm] ~= nil then
                     counts[nm] = (counts[nm] or 0) + 1
                 end

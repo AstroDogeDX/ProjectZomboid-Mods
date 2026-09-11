@@ -35,7 +35,9 @@ end
 function SF.Filters.isEmpty(item)
     if item.getFluidContainer then
         local fc = item:getFluidContainer()
-        if fc and fc:isEmpty() then return true end
+        if fc and (fc:isEmpty() or (fc.getAmount and fc:getAmount() <= 0)) then
+            return true
+        end
     end
     if instanceof(item, "DrainableComboItem")
         and item.getCurrentUsesFloat and item:getCurrentUsesFloat() <= 0 then

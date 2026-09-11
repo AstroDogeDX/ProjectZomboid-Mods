@@ -12,9 +12,11 @@ items you care about, walk past a container, and they hop into your bag.
 
 - **Right-click tagging** — right-click any item → *Sticky Fingers* →
   *Auto-loot X* to toggle it on/off.
-- **Variant grouping** — items are tagged by *display name*, the same key the
-  vanilla inventory uses to group stacks. Tagging one variant collects them all
-  (e.g. black + red *Digital Watch*, or every branded *Energy Drink*).
+- **Variant grouping** — items are tagged by their *inventory name* (the exact
+  key the game stacks by), so tagging one variant collects everything that
+  stacks with it (e.g. black + red *Digital Watch*, or every branded *Energy
+  Drink*) — while a renamed depleted item like *Empty Cleaning Liquid Bottle*
+  stays a separate entry and isn't looted just because the full one is tagged.
 - **Per-item "max carried" + shopping list** — each tagged entry can have a max
   count (edited inline in the Tagged tab): once you're carrying that many, it
   stops looting more until you drop below it. Tick *Remove from list once max is
