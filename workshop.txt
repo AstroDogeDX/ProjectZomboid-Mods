@@ -1,0 +1,8 @@
+version=1
+id=0
+title=Sticky Fingers (Auto Looter)
+description=Clean and configurable auto looter for Project Zomboid Build 42.
+description=
+description=Tag the items you want, walk past a container, and they hop into your bag.
+tags=Build 42;Interface;Items;Misc
+visibility=public
