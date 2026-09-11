@@ -30,7 +30,7 @@ function SFMainWindow:new(x, y, w, h)
     o.title = "Sticky Fingers"
     o.resizable = true
     o.minimumWidth = 360
-    o.minimumHeight = 440
+    o.minimumHeight = 460
     return o
 end
 
@@ -124,7 +124,7 @@ function SF.UI.toggleMainWindow()
         SF.UI.instance:close()
         return
     end
-    local w, h = 420, 480
+    local w, h = 420, 520
     local x = getCore():getScreenWidth() / 2 - w / 2
     local y = getCore():getScreenHeight() / 2 - h / 2
     local win = SFMainWindow:new(x, y, w, h)

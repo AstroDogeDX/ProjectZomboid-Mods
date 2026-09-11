@@ -32,9 +32,10 @@ items you care about, walk past a container, and they hop into your bag.
   raises your capacity, the limit scales with it. Items that wouldn't fit are
   skipped while lighter ones can still be grabbed.
 - **Quality filters** (optional) — skip **non-fresh food** (stale / rotten /
-  burnt) and/or **broken items**, even when their type is tagged. Handy because
-  broken items share the same display name as working ones, so this is the way
-  to leave them behind.
+  burnt), **broken items**, and/or **empty items** (used-up cans, drained
+  cleaning-liquid/soda/fluid containers), even when their type is tagged. Handy
+  because a depleted item keeps the same display name as its full version, so
+  this is how you avoid re-looting your own empties.
 - **Auto-loot unread skill books & recipe magazines** (optional) — walk past a
   bookshelf and grab **skill books** and **recipe-teaching** magazines/leaflets
   you haven't consumed yet. Plain fiction is deliberately left behind. Uses the

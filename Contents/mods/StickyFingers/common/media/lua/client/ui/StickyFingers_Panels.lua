@@ -508,9 +508,14 @@ function SFSettingsPanel:createChildren()
     self.filterTick:initialise(); self.filterTick:instantiate()
     self.filterTick:addOption("Non-fresh food (stale / rotten / burnt)")
     self.filterTick:addOption("Broken items")
+    self.filterTick:addOption("Empty items (used-up cans / bottles)")
     self.filterTick:setSelected(1, SF.getData().ignoreNonFreshFood == true)
     self.filterTick:setSelected(2, SF.getData().ignoreBroken == true)
+    self.filterTick:setSelected(3, SF.getData().ignoreEmpty == true)
     self:addChild(self.filterTick)
+
+    self.extrasLabel = ISLabel:new(PAD, 0, 18, "Extras:", 1, 1, 1, 1, UIFont.Small, true)
+    self.extrasLabel:initialise(); self:addChild(self.extrasLabel)
 
     self.booksTick = ISTickBox:new(PAD, 0, 300, S_CHECK, "", self, SFSettingsPanel.onToggleBooks)
     self.booksTick:initialise(); self.booksTick:instantiate()
@@ -545,8 +550,9 @@ function SFSettingsPanel:layout()
 
     self.filterLabel:setX(PAD); self.filterLabel:setY(y); y = y + 20
     self.filterTick:setX(PAD); self.filterTick:setY(y)
-    y = y + self.filterTick:getHeight() + 10
+    y = y + self.filterTick:getHeight() + 12
 
+    self.extrasLabel:setX(PAD); self.extrasLabel:setY(y); y = y + 20
     self.booksTick:setX(PAD); self.booksTick:setY(y)
 end
 
@@ -604,6 +610,7 @@ function SFSettingsPanel:onToggleFilters()
     local data = SF.getData()
     data.ignoreNonFreshFood = self.filterTick:isSelected(1)
     data.ignoreBroken = self.filterTick:isSelected(2)
+    data.ignoreEmpty = self.filterTick:isSelected(3)
     SF.save()
 end
 

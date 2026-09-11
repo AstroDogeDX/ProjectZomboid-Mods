@@ -28,10 +28,27 @@ function SF.Filters.isBroken(item)
     return item.isBroken and item:isBroken() == true
 end
 
+-- "Empty" covers used-up consumables that keep the same name as their full
+-- version: a fluid container run dry (soda cans, cleaning liquids, bottles) or
+-- a drainable with no uses left. getFluidContainer() is safe on any item
+-- (returns nil when not a fluid item).
+function SF.Filters.isEmpty(item)
+    if item.getFluidContainer then
+        local fc = item:getFluidContainer()
+        if fc and fc:isEmpty() then return true end
+    end
+    if instanceof(item, "DrainableComboItem")
+        and item.getCurrentUsesFloat and item:getCurrentUsesFloat() <= 0 then
+        return true
+    end
+    return false
+end
+
 -- True if this specific item should be skipped despite being tagged.
 function SF.Filters.blocked(item)
     local data = SF.getData()
     if data.ignoreBroken and SF.Filters.isBroken(item) then return true end
+    if data.ignoreEmpty and SF.Filters.isEmpty(item) then return true end
     if data.ignoreNonFreshFood and SF.Filters.isNonFreshFood(item) then return true end
     return false
 end
