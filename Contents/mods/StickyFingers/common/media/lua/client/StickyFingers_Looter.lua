@@ -43,13 +43,21 @@ end
 -- move second so we never mutate a container while iterating it.
 ------------------------------------------------------------------
 
--- Should this item be grabbed? True if its type is tagged, or if it's an
--- unread book and the auto-book feature wants it. Quality filters (food/broken)
--- can veto either path.
-local function wants(player, item)
-    if not item or SF.Filters.blocked(item) then return false end
-    if SF.Tags.isTagged(item) then return true end
-    return SF.Books.shouldGrab(player, item)
+-- Decide whether/why to grab an item. Returns a plan { key, max } or nil:
+--   key = the tag's display-name key (for the max-carried counter), nil for a
+--         book grab; max = per-item carry cap (nil = no cap). Quality filters
+--   (food/broken) veto either path.
+local function grabPlan(player, item)
+    if not item or SF.Filters.blocked(item) then return nil end
+    local key = SF.Tags.keyOf(item)
+    if key and SF.getData().tags[key] ~= nil then
+        local entry = SF.Tags.getEntry(key)
+        return { key = key, max = entry and entry.max or nil }
+    end
+    if SF.Books.shouldGrab(player, item) then
+        return { key = nil, max = nil }
+    end
+    return nil
 end
 
 local function collectFromContainer(container, player, out)
@@ -58,9 +66,11 @@ local function collectFromContainer(container, player, out)
     if not items then return end
     for i = 0, items:size() - 1 do
         local item = items:get(i)
-        if wants(player, item) then
+        local plan = grabPlan(player, item)
+        if plan then
             out[#out + 1] = {
                 weight = item:getUnequippedWeight(),
+                key = plan.key, max = plan.max,
                 grab = function()
                     container:Remove(item)
                     player:getInventory():AddItem(item)
@@ -76,9 +86,11 @@ local function collectGround(sq, player, out)
     for i = 0, worldObjs:size() - 1 do
         local wobj = worldObjs:get(i)
         local item = wobj and wobj:getItem()
-        if wants(player, item) then
+        local plan = grabPlan(player, item)
+        if plan then
             out[#out + 1] = {
                 weight = item:getUnequippedWeight(),
+                key = plan.key, max = plan.max,
                 grab = function()
                     sq:transmitRemoveItemFromSquare(wobj)
                     player:getInventory():AddItem(item)
@@ -262,21 +274,48 @@ function SF.Looter.scan(player)
     end
     local currentWeight = limit and playerInv:getCapacityWeight() or 0
 
-    -- Execute grabs (capped by count and, optionally, by weight).
+    -- Per-item "max carried" counts (shopping list). Only walk the inventory
+    -- when some tag actually uses a max / auto-remove. invCounts is a running
+    -- tally per display name, seeded from what's already carried.
+    local invCounts = SF.Tags.hasLimits() and SF.Tags.buildInventoryCounts(player) or nil
+
+    -- Execute grabs (capped by count, optional weight, and optional per-item max).
     local grabbed = 0
     for _, entry in ipairs(out) do
         if grabbed >= MAX_GRABS_PER_SCAN then break end
-        if limit and (currentWeight + entry.weight) > limit then
-            -- would exceed the carry limit; skip this item, keep checking others
+
+        local overMax = invCounts and entry.max and entry.key
+            and (invCounts[entry.key] or 0) >= entry.max
+        local overWeight = limit and (currentWeight + entry.weight) > limit
+
+        if overMax or overWeight then
+            -- at the per-item cap or too heavy; skip, keep checking others
         else
             local ok, err = pcall(entry.grab)
             if ok then
                 grabbed = grabbed + 1
                 currentWeight = currentWeight + entry.weight
+                if invCounts and entry.key then
+                    invCounts[entry.key] = (invCounts[entry.key] or 0) + 1
+                end
             elseif not warned["grab"] then
                 warned["grab"] = true
                 SF.warn("Grab failed:", err)
             end
+        end
+    end
+
+    -- Auto-remove "shopping list" tags that have now reached their max.
+    if invCounts then
+        local remove
+        for key, e in pairs(SF.getData().tags) do
+            if type(e) == "table" and e.autoRemove and e.max and (invCounts[key] or 0) >= e.max then
+                remove = remove or {}
+                remove[#remove + 1] = key
+            end
+        end
+        if remove then
+            for _, key in ipairs(remove) do SF.Tags.remove(key) end
         end
     end
 

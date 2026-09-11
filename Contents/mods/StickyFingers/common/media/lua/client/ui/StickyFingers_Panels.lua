@@ -27,11 +27,20 @@ local BTN_H = 24
 
 SFTaggedPanel = ISPanel:derive("SFTaggedPanel")
 
+-- Inline "[max N, auto-remove]" suffix shown after each entry name.
+local function limitText(max, autoRemove)
+    if max then
+        return "   [max " .. max .. (autoRemove and ", auto-remove]" or "]")
+    end
+    return "   [no limit]"
+end
+
 function SFTaggedPanel:new(x, y, w, h)
     local o = ISPanel:new(x, y, w, h)
     setmetatable(o, self)
     self.__index = self
     o.background = false
+    o.lastSelected = -1
     return o
 end
 
@@ -44,6 +53,24 @@ function SFTaggedPanel:createChildren()
     self.list.itemheight = 22
     self.list.font = UIFont.NewSmall
     self:addChild(self.list)
+
+    -- Per-entry editor (acts on the selected row).
+    self.maxLabel = ISLabel:new(PAD, 0, 18, "Max carried:", 1, 1, 1, 1, UIFont.Small, true)
+    self.maxLabel:initialise()
+    self:addChild(self.maxLabel)
+
+    self.maxEntry = ISTextEntryBox:new("", 0, 0, 60, BTN_H)
+    self.maxEntry:initialise()
+    self.maxEntry:instantiate()
+    self.maxEntry:setOnlyNumbers(true)
+    self.maxEntry.onTextChangeFunction = function() self:onMaxChanged() end
+    self:addChild(self.maxEntry)
+
+    self.autoTick = ISTickBox:new(PAD, 0, 240, 18, "", self, SFTaggedPanel.onAutoChanged)
+    self.autoTick:initialise()
+    self.autoTick:instantiate()
+    self.autoTick:addOption("Remove from list once max is reached")
+    self:addChild(self.autoTick)
 
     self.removeBtn = ISButton:new(0, 0, 100, BTN_H, "Remove selected", self, SFTaggedPanel.onRemove)
     self.removeBtn:initialise()
@@ -59,26 +86,76 @@ end
 
 function SFTaggedPanel:layout()
     local w, h = self:getWidth(), self:getHeight()
+
+    local btnY  = h - PAD - BTN_H            -- remove / clear
+    local autoY = btnY - PAD - 20            -- auto-remove tick
+    local maxY  = autoY - PAD - BTN_H        -- max label + entry
+
     self.list:setX(PAD); self.list:setY(PAD)
     self.list:setWidth(w - PAD * 2)
-    self.list:setHeight(h - PAD * 3 - BTN_H)
+    self.list:setHeight(maxY - PAD * 2)
+
+    self.maxLabel:setX(PAD); self.maxLabel:setY(maxY + 4)
+    self.maxEntry:setX(PAD + 90); self.maxEntry:setY(maxY); self.maxEntry:setWidth(60)
+
+    self.autoTick:setX(PAD); self.autoTick:setY(autoY)
 
     local btnW = (w - PAD * 3) / 2
-    local by = h - PAD - BTN_H
-    self.removeBtn:setX(PAD);              self.removeBtn:setY(by); self.removeBtn:setWidth(btnW)
-    self.clearBtn:setX(PAD * 2 + btnW);    self.clearBtn:setY(by); self.clearBtn:setWidth(btnW)
+    self.removeBtn:setX(PAD);           self.removeBtn:setY(btnY); self.removeBtn:setWidth(btnW)
+    self.clearBtn:setX(PAD * 2 + btnW); self.clearBtn:setY(btnY); self.clearBtn:setWidth(btnW)
 end
 
 function SFTaggedPanel:prerender()
     ISPanel.prerender(self)
+    self:syncEditor()
     self:layout()
+end
+
+-- When the selected row changes, load its settings into the editor widgets.
+function SFTaggedPanel:syncEditor()
+    if self.list.selected == self.lastSelected then return end
+    self.lastSelected = self.list.selected
+    local item = self.list.items[self.list.selected]
+    if item and item.item then
+        self.editKey = item.item.key
+        self.maxEntry:setText(item.item.max and tostring(item.item.max) or "")
+        self.autoTick:setSelected(1, item.item.autoRemove == true)
+    else
+        self.editKey = nil
+        self.maxEntry:setText("")
+        self.autoTick:setSelected(1, false)
+    end
+end
+
+-- Update the selected row's inline text after an edit (no list rebuild, so the
+-- selection and typing focus are preserved).
+function SFTaggedPanel:updateSelectedRowText()
+    local item = self.list.items[self.list.selected]
+    if not (item and item.item) then return end
+    local e = SF.Tags.getEntry(item.item.key)
+    item.item.max = e and e.max or nil
+    item.item.autoRemove = e and e.autoRemove == true
+    item.text = item.item.name .. limitText(item.item.max, item.item.autoRemove)
+end
+
+function SFTaggedPanel:onMaxChanged()
+    if not self.editKey then return end
+    SF.Tags.setMax(self.editKey, tonumber(self.maxEntry:getText()))
+    self:updateSelectedRowText()
+end
+
+function SFTaggedPanel:onAutoChanged()
+    if not self.editKey then return end
+    SF.Tags.setAutoRemove(self.editKey, self.autoTick:isSelected(1))
+    self:updateSelectedRowText()
 end
 
 function SFTaggedPanel:refresh()
     if not self.list then return end
     self.list:clear()
+    self.lastSelected = -1   -- force editor re-sync after rebuild
     for _, entry in ipairs(SF.Tags.getSortedList()) do
-        self.list:addItem(entry.name, entry)
+        self.list:addItem(entry.name .. limitText(entry.max, entry.autoRemove), entry)
     end
 end
 

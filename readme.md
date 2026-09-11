@@ -15,6 +15,11 @@ items you care about, walk past a container, and they hop into your bag.
 - **Variant grouping** — items are tagged by *display name*, the same key the
   vanilla inventory uses to group stacks. Tagging one variant collects them all
   (e.g. black + red *Digital Watch*, or every branded *Energy Drink*).
+- **Per-item "max carried" + shopping list** — each tagged entry can have a max
+  count (edited inline in the Tagged tab): once you're carrying that many, it
+  stops looting more until you drop below it. Tick *Remove from list once max is
+  reached* to make it a one-shot shopping-list entry that deletes itself when
+  filled. New tags default to *no limit* (loot forever).
 - **Source toggles** — independently enable/disable looting from **Ground,
   Containers, Vehicles, Corpses, Animals**.
 - **Management window** — searchable list of *all* game items to tag ahead of

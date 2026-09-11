@@ -14,7 +14,7 @@
 SF = SF or {}
 
 SF.MOD_ID   = "StickyFingers"
-SF.VERSION  = 2            -- config schema version, bump when Defaults change shape
+SF.VERSION  = 3            -- config schema version, bump when Defaults change shape
 SF.DEBUG    = false        -- flip on for verbose console logging
 
 -- Canonical source-type keys. Order matters for UI display.
@@ -133,6 +133,17 @@ function SF.migrate(data, fromVersion)
             end
         end
         data.tags = converted
+    end
+
+    -- v2 -> v3: tags were a set (name = true). They now carry per-item settings
+    -- (name = { max = number|nil, autoRemove = bool }). Convert each flag to an
+    -- unlimited "loot forever" record.
+    if fromVersion < 3 then
+        for name, val in pairs(data.tags or {}) do
+            if type(val) ~= "table" then
+                data.tags[name] = { max = nil, autoRemove = false }
+            end
+        end
     end
 end
 
