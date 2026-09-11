@@ -31,6 +31,7 @@ SF.Defaults = {
     weightPercent = 100,               -- carry limit as % of current max weight (100 = capacity, >100 = overcarry)
     ignoreNonFreshFood = false,        -- skip stale / rotten / burnt food
     ignoreBroken = false,              -- skip broken items
+    autoLootBooks = false,             -- also grab unread literature (skill books, recipe mags), deduped vs inventory
     sources = {
         Ground     = true,
         Containers = true,

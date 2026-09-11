@@ -121,6 +121,14 @@ function SFMainWindow:createChildren()
     self.filterTick:setSelected(2, SF.getData().ignoreBroken == true)
     self:addChild(self.filterTick)
 
+    -- Smart looting
+    self.booksTick = ISTickBox:new(PAD, 0, 300, CHECK, "", self, SFMainWindow.onToggleBooks)
+    self.booksTick:initialise()
+    self.booksTick:instantiate()
+    self.booksTick:addOption("Auto-loot unread books, magazines & leaflets")
+    self.booksTick:setSelected(1, SF.getData().autoLootBooks == true)
+    self:addChild(self.booksTick)
+
     -- Tabs + panels
     self.tabs = ISTabPanel:new(PAD, 0, 200, 200)
     self.tabs:initialise()
@@ -185,6 +193,9 @@ function SFMainWindow:layout()
     y = y + 20
     self.filterTick:setX(PAD); self.filterTick:setY(y)
     y = y + self.filterTick:getHeight() + 10
+
+    self.booksTick:setX(PAD); self.booksTick:setY(y)
+    y = y + self.booksTick:getHeight() + 10
 
     self.tabs:setX(PAD); self.tabs:setY(y)
     self.tabs:setWidth(w - PAD * 2)
@@ -253,6 +264,11 @@ function SFMainWindow:onToggleFilters()
     SF.save()
 end
 
+function SFMainWindow:onToggleBooks()
+    SF.getData().autoLootBooks = self.booksTick:isSelected(1)
+    SF.save()
+end
+
 function SFMainWindow:updateWeightLabel()
     self.weightLabel:setName("Carry limit: " .. SF.getWeightPercent() .. "% of max")
 end
@@ -282,7 +298,7 @@ function SF.UI.toggleMainWindow()
         SF.UI.instance:close()
         return
     end
-    local w, h = 380, 600
+    local w, h = 380, 640
     local x = getCore():getScreenWidth() / 2 - w / 2
     local y = getCore():getScreenHeight() / 2 - h / 2
     local win = SFMainWindow:new(x, y, w, h)

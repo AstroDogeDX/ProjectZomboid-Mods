@@ -43,13 +43,22 @@ end
 -- move second so we never mutate a container while iterating it.
 ------------------------------------------------------------------
 
+-- Should this item be grabbed? True if its type is tagged, or if it's an
+-- unread book and the auto-book feature wants it. Quality filters (food/broken)
+-- can veto either path.
+local function wants(player, item)
+    if not item or SF.Filters.blocked(item) then return false end
+    if SF.Tags.isTagged(item) then return true end
+    return SF.Books.shouldGrab(player, item)
+end
+
 local function collectFromContainer(container, player, out)
     if not container then return end
     local items = container:getItems()
     if not items then return end
     for i = 0, items:size() - 1 do
         local item = items:get(i)
-        if item and SF.Tags.isTagged(item) and not SF.Filters.blocked(item) then
+        if wants(player, item) then
             out[#out + 1] = {
                 weight = item:getUnequippedWeight(),
                 grab = function()
@@ -67,7 +76,7 @@ local function collectGround(sq, player, out)
     for i = 0, worldObjs:size() - 1 do
         local wobj = worldObjs:get(i)
         local item = wobj and wobj:getItem()
-        if item and SF.Tags.isTagged(item) and not SF.Filters.blocked(item) then
+        if wants(player, item) then
             out[#out + 1] = {
                 weight = item:getUnequippedWeight(),
                 grab = function()
@@ -199,6 +208,8 @@ function SF.Looter.scan(player)
     local range = data.range or 2
     local cell = getCell()
     local out = {}
+
+    SF.Books.beginScan()   -- reset per-scan duplicate-book guard
 
     -- All sources are scanned per-square within range: ground, placed
     -- containers, corpses/animals (static-moving objects), and vehicle parts.
