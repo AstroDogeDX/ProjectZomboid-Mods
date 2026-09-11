@@ -40,10 +40,7 @@ function SFZoneSelector:onMouseDown(x, y)
     local tx, ty = self:mouseWorldTile()
     if not self.cornerA then
         self.cornerA = { x = tx, y = ty }
-        local p = getPlayer()
-        if HaloTextHelper and p then
-            HaloTextHelper.addText(p, "Corner set — click the opposite corner", HaloTextHelper.getColorGreen())
-        end
+        SF.halo(getPlayer(), "Corner set - click the opposite corner", true)
     else
         SF.Zones.add(self.cornerA.x, self.cornerA.y, tx, ty)
         self:finish()
@@ -61,8 +58,8 @@ function SFZoneSelector:prerender()
 
     -- Instruction banner.
     local msg = self.cornerA
-        and "Click the OPPOSITE corner to finish  •  right-click to cancel"
-        or  "Click the FIRST corner of the safe zone  •  right-click to cancel"
+        and "Click the OPPOSITE corner to finish  |  right-click to cancel"
+        or  "Click the FIRST corner of the safe zone  |  right-click to cancel"
     local tw = getTextManager():MeasureStringX(UIFont.Medium, msg)
     local bx = self.width / 2 - tw / 2 - 10
     self:drawRect(bx, 20, tw + 20, 30, 0.7, 0, 0, 0)

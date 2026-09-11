@@ -128,7 +128,7 @@ function SFSearchPanel:createChildren()
     self.addBtn:setAnchorRight(true)
     self:addChild(self.addBtn)
 
-    self.hint = ISLabel:new(PAD, PAD * 2 + BTN_H, 18, "Type at least " .. MIN_QUERY .. " characters to search…", 0.6, 0.6, 0.6, 1, UIFont.NewSmall, true)
+    self.hint = ISLabel:new(PAD, PAD * 2 + BTN_H, 18, "Type at least " .. MIN_QUERY .. " characters to search...", 0.6, 0.6, 0.6, 1, UIFont.NewSmall, true)
     self.hint:initialise()
     self:addChild(self.hint)
 end
@@ -156,7 +156,7 @@ function SFSearchPanel:refresh()
             local hay = (name .. " " .. fullType):lower()
             if hay:find(query, 1, true) then
                 local tagged = SF.Tags.isTagged(fullType)
-                local label = (tagged and "[✓] " or "") .. name .. "  (" .. fullType .. ")"
+                local label = (tagged and "* " or "") .. name .. "  (" .. fullType .. ")"
                 self.list:addItem(label, { type = fullType, name = name })
                 count = count + 1
             end

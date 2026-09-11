@@ -209,10 +209,7 @@ end
 -- Feedback hook when items are grabbed. Kept tiny/optional so it's easy to
 -- swap for a sound or richer notification later.
 function SF.Looter.onGrabbed(player, count)
-    if HaloTextHelper then
-        HaloTextHelper.addTextWithArrow(player, "+" .. count .. " looted", true,
-            HaloTextHelper.getColorGreen())
-    end
+    SF.halo(player, "+" .. count .. " looted", true)
 end
 
 ------------------------------------------------------------------

@@ -26,12 +26,7 @@ local function onKeyPressed(key)
     elseif key == core:getKey(BIND_MASTER) then
         local now = not SF.isMasterEnabled()
         SF.setMasterEnabled(now)
-        local player = getPlayer()
-        if HaloTextHelper and player then
-            HaloTextHelper.addText(player,
-                now and "Auto-looting ON" or "Auto-looting OFF",
-                now and HaloTextHelper.getColorGreen() or HaloTextHelper.getColorRed())
-        end
+        SF.halo(getPlayer(), now and "Auto-looting ON" or "Auto-looting OFF", now)
         -- Keep an open window's master tick in sync.
         if SF.UI.instance and SF.UI.instance.masterTick then
             SF.UI.instance.masterTick:setSelected(1, now)

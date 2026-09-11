@@ -55,7 +55,10 @@ function SFMainWindow:createChildren()
     self:addChild(self.srcLabel)
     y = y + 20
 
-    self.srcTick = ISTickBox:new(PAD, y, w - PAD * 2, #SF.SOURCE_KEYS * ROW, "", self, SFMainWindow.onToggleSource)
+    -- NOTE: ISTickBox sizes each tick square from the widget height, so this
+    -- must be a single-row height. The box lays its options out downward on its
+    -- own; we reserve #keys*ROW of vertical space below for the tabs.
+    self.srcTick = ISTickBox:new(PAD, y, w - PAD * 2, ROW, "", self, SFMainWindow.onToggleSource)
     self.srcTick:initialise()
     self.srcTick:instantiate()
     for idx, key in ipairs(SF.SOURCE_KEYS) do

@@ -51,6 +51,15 @@ function SF.warn(...)
     print("[StickyFingers][WARN]", ...)
 end
 
+-- Floating feedback text above a character. Uses the addTextWithArrow overload
+-- (IsoPlayer, String, boolean arrowUp, ColorRGB) — the plain addText() requires
+-- a separator arg and has no (player, text, color) overload.
+function SF.halo(character, text, good)
+    if not character or not HaloTextHelper then return end
+    local color = good and HaloTextHelper.getColorGreen() or HaloTextHelper.getColorRed()
+    HaloTextHelper.addTextWithArrow(character, text, good and true or false, color)
+end
+
 ------------------------------------------------------------------
 -- Small table helpers
 ------------------------------------------------------------------

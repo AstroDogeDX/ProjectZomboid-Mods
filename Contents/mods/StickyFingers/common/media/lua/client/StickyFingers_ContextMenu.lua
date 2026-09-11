@@ -12,13 +12,10 @@ SF.ContextMenu = {}
 -- Callback: target is passed first by ISContextMenu, then our params.
 function SF.ContextMenu.onToggle(_player, fullType, displayName)
     local nowTagged = SF.Tags.toggle(fullType)
-    if HaloTextHelper and _player then
-        local msg = nowTagged
-            and ("Auto-looting: " .. displayName)
-            or  ("Stopped: " .. displayName)
-        HaloTextHelper.addText(_player, msg,
-            nowTagged and HaloTextHelper.getColorGreen() or HaloTextHelper.getColorRed())
-    end
+    local msg = nowTagged
+        and ("Auto-looting: " .. displayName)
+        or  ("Stopped: " .. displayName)
+    SF.halo(_player, msg, nowTagged)
 end
 
 function SF.ContextMenu.onOpenWindow(_player)
@@ -66,10 +63,7 @@ function SF.ContextMenu.onFill(playerNum, context, items)
         end
     end
 
-    if #types > 0 then
-        sub:addOption("—", nil, nil)  -- lightweight visual separator
-    end
-    sub:addOption("Open Sticky Fingers…", player, SF.ContextMenu.onOpenWindow)
+    sub:addOption("Open Sticky Fingers panel", player, SF.ContextMenu.onOpenWindow)
 end
 
 Events.OnFillInventoryObjectContextMenu.Add(SF.ContextMenu.onFill)

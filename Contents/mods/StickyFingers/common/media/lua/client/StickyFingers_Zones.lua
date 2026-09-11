@@ -65,5 +65,5 @@ end
 function SF.Zones.describe(zone)
     local w = (zone.x2 - zone.x1) + 1
     local h = (zone.y2 - zone.y1) + 1
-    return string.format("(%d, %d) — %dx%d tiles", zone.x1, zone.y1, w, h)
+    return string.format("(%d, %d) - %dx%d tiles", zone.x1, zone.y1, w, h)
 end
