@@ -49,7 +49,7 @@ local function collectFromContainer(container, player, out)
     if not items then return end
     for i = 0, items:size() - 1 do
         local item = items:get(i)
-        if item and SF.Tags.isTagged(item) then
+        if item and SF.Tags.isTagged(item) and not SF.Filters.blocked(item) then
             out[#out + 1] = {
                 weight = item:getUnequippedWeight(),
                 grab = function()
@@ -67,7 +67,7 @@ local function collectGround(sq, player, out)
     for i = 0, worldObjs:size() - 1 do
         local wobj = worldObjs:get(i)
         local item = wobj and wobj:getItem()
-        if item and SF.Tags.isTagged(item) then
+        if item and SF.Tags.isTagged(item) and not SF.Filters.blocked(item) then
             out[#out + 1] = {
                 weight = item:getUnequippedWeight(),
                 grab = function()

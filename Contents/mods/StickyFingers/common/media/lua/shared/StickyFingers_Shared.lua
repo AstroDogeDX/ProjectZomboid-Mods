@@ -29,6 +29,8 @@ SF.Defaults = {
     respectReach = true,               -- only loot squares the player can walk to (no through-walls)
     respectWeight = false,             -- stop looting once at/over the carry limit
     weightPercent = 100,               -- carry limit as % of current max weight (100 = capacity, >100 = overcarry)
+    ignoreNonFreshFood = false,        -- skip stale / rotten / burnt food
+    ignoreBroken = false,              -- skip broken items
     sources = {
         Ground     = true,
         Containers = true,

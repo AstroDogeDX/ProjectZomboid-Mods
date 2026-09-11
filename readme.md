@@ -26,6 +26,10 @@ items you care about, walk past a container, and they hop into your bag.
   adjustable cap from **50%–300%** of your *current* max weight — so as Strength
   raises your capacity, the limit scales with it. Items that wouldn't fit are
   skipped while lighter ones can still be grabbed.
+- **Quality filters** (optional) — skip **non-fresh food** (stale / rotten /
+  burnt) and/or **broken items**, even when their type is tagged. Handy because
+  broken items share the same display name as working ones, so this is the way
+  to leave them behind.
 - **Ignore zones** — mark rectangular safe areas (e.g. your base) by picking two
   corners in the world; looting is suppressed while you stand inside one.
 - **Exclude containers & vehicles** — right-click a specific container or a whole

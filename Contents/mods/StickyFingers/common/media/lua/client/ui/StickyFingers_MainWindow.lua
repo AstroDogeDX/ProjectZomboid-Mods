@@ -107,6 +107,20 @@ function SFMainWindow:createChildren()
     self:addChild(self.weightPlus)
     self:updateWeightLabel()
 
+    -- Quality filters
+    self.filterLabel = ISLabel:new(PAD, 0, 18, "Skip these even if tagged:", 1, 1, 1, 1, UIFont.Small, true)
+    self.filterLabel:initialise()
+    self:addChild(self.filterLabel)
+
+    self.filterTick = ISTickBox:new(PAD, 0, 280, CHECK, "", self, SFMainWindow.onToggleFilters)
+    self.filterTick:initialise()
+    self.filterTick:instantiate()
+    self.filterTick:addOption("Non-fresh food (stale / rotten / burnt)")
+    self.filterTick:addOption("Broken items")
+    self.filterTick:setSelected(1, SF.getData().ignoreNonFreshFood == true)
+    self.filterTick:setSelected(2, SF.getData().ignoreBroken == true)
+    self:addChild(self.filterTick)
+
     -- Tabs + panels
     self.tabs = ISTabPanel:new(PAD, 0, 200, 200)
     self.tabs:initialise()
@@ -166,6 +180,11 @@ function SFMainWindow:layout()
     self.weightPlus:setX(w - PAD - 20);    self.weightPlus:setY(y)
     self.weightMinus:setX(w - PAD - 44);   self.weightMinus:setY(y)
     y = y + ROW + 10
+
+    self.filterLabel:setX(PAD); self.filterLabel:setY(y)
+    y = y + 20
+    self.filterTick:setX(PAD); self.filterTick:setY(y)
+    y = y + self.filterTick:getHeight() + 10
 
     self.tabs:setX(PAD); self.tabs:setY(y)
     self.tabs:setWidth(w - PAD * 2)
@@ -227,6 +246,13 @@ function SFMainWindow:onToggleWeight()
     SF.setRespectWeight(self.weightTick:isSelected(1))
 end
 
+function SFMainWindow:onToggleFilters()
+    local data = SF.getData()
+    data.ignoreNonFreshFood = self.filterTick:isSelected(1)
+    data.ignoreBroken = self.filterTick:isSelected(2)
+    SF.save()
+end
+
 function SFMainWindow:updateWeightLabel()
     self.weightLabel:setName("Carry limit: " .. SF.getWeightPercent() .. "% of max")
 end
@@ -256,7 +282,7 @@ function SF.UI.toggleMainWindow()
         SF.UI.instance:close()
         return
     end
-    local w, h = 380, 540
+    local w, h = 380, 600
     local x = getCore():getScreenWidth() / 2 - w / 2
     local y = getCore():getScreenHeight() / 2 - h / 2
     local win = SFMainWindow:new(x, y, w, h)
