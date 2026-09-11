@@ -13,8 +13,8 @@
                        getContainerByIndex()
         - Corpses/   : IsoGridSquare:getStaticMovingObjects() -> :getContainer();
           Animals      instanceof(so,"IsoDeadBody") and so:isAnimal() splits them
-        - Vehicles   : Cell:getVehicles(), BaseVehicle:getPartByIndex()
-                       :getItemContainer()   (still to confirm in-game)
+        - Vehicles   : IsoGridSquare:getVehicleContainer() -> getPartByIndex()
+                       :getItemContainer(), gated by canAccessContainer()
       Each source is wrapped so a single bad call can't break the whole loop;
       it warns once to the console and is skipped.
 ]]
@@ -106,21 +106,19 @@ local function collectStaticMovingObjects(sq, player, out, wantCorpses, wantAnim
     end
 end
 
-local function collectVehicles(player, cx, cy, range, out)
-    local cell = getCell()
-    local vehicles = cell and cell:getVehicles()
-    if not vehicles then return end
-    for i = 0, vehicles:size() - 1 do
-        local veh = vehicles:get(i)
-        if veh and math.abs(veh:getX() - cx) <= range and math.abs(veh:getY() - cy) <= range then
-            local partCount = veh:getPartCount()
-            for p = 0, partCount - 1 do
-                local part = veh:getPartByIndex(p)
-                local container = part and part:getItemContainer()
-                if container then
-                    collectFromContainer(container, player, out)
-                end
-            end
+-- Vehicle containers are reached per-square via IsoGridSquare:getVehicleContainer()
+-- (exactly how vanilla ISInventoryPage builds the loot window), respecting
+-- canAccessContainer() so locked/unreachable parts are skipped. `seen` dedupes
+-- a vehicle that spans several scanned squares.
+local function collectVehicleOnSquare(sq, player, out, seen)
+    local veh = sq:getVehicleContainer()
+    if not veh or seen[veh] then return end
+    seen[veh] = true
+    for partIndex = 1, veh:getPartCount() do
+        local part = veh:getPartByIndex(partIndex - 1)
+        local container = part and part:getItemContainer()
+        if container and veh:canAccessContainer(partIndex - 1, player) then
+            collectFromContainer(container, player, out)
         end
     end
 end
@@ -143,14 +141,16 @@ function SF.Looter.scan(player)
     local cell = getCell()
     local out = {}
 
-    -- Per-square sources: ground, placed containers, and corpses/animals
-    -- (both live in the square's static-moving-object list).
+    -- All sources are scanned per-square within range: ground, placed
+    -- containers, corpses/animals (static-moving objects), and vehicle parts.
     local wantGround     = SF.isSourceEnabled("Ground")
     local wantContainers = SF.isSourceEnabled("Containers")
     local wantCorpses    = SF.isSourceEnabled("Corpses")
     local wantAnimals    = SF.isSourceEnabled("Animals")
+    local wantVehicles   = SF.isSourceEnabled("Vehicles")
+    local seenVehicles   = {}
 
-    if wantGround or wantContainers or wantCorpses or wantAnimals then
+    if wantGround or wantContainers or wantCorpses or wantAnimals or wantVehicles then
         for dx = -range, range do
             for dy = -range, range do
                 local sq = cell:getGridSquare(cx + dx, cy + dy, cz)
@@ -166,14 +166,14 @@ function SF.Looter.scan(player)
                             collectStaticMovingObjects(sq, player, out, wantCorpses, wantAnimals)
                         end)
                     end
+                    if wantVehicles then
+                        safe("Vehicles", function()
+                            collectVehicleOnSquare(sq, player, out, seenVehicles)
+                        end)
+                    end
                 end
             end
         end
-    end
-
-    -- Cell-level sources (checked once per scan, distance-filtered).
-    if SF.isSourceEnabled("Vehicles") then
-        safe("Vehicles", function() collectVehicles(player, cx, cy, range, out) end)
     end
 
     -- Execute grabs (capped).

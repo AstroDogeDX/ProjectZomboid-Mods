@@ -107,8 +107,10 @@ flagged line if a name differs in your build:
 - [x] **Corpses & Animals** — both are `IsoDeadBody` entries in
       `IsoGridSquare:getStaticMovingObjects()`; `so:isAnimal()` separates the two
       source toggles. Fixed to match vanilla `ISInventoryPage.lua`.
-- [ ] **Vehicles** — `getCell():getVehicles()`, `BaseVehicle:getPartCount()`,
-      `getPartByIndex(i):getItemContainer()`. *Still to confirm in-game.*
+- [x] **Vehicles** — per-square `IsoGridSquare:getVehicleContainer()` +
+      `getPartByIndex():getItemContainer()`, gated by `canAccessContainer()`
+      (matches vanilla `ISInventoryPage.lua`). Replaced the crashing
+      `getCell():getVehicles()` approach.
 - [ ] **Zone picker** — `ISCoordConversion.ToWorld/ToScreen` argument order and
       return values (world tile under the cursor). *Zones confirmed working; the
       corner-picker overlay projection is the unverified part.*
