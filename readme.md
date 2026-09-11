@@ -30,11 +30,11 @@ items you care about, walk past a container, and they hop into your bag.
   burnt) and/or **broken items**, even when their type is tagged. Handy because
   broken items share the same display name as working ones, so this is the way
   to leave them behind.
-- **Auto-loot unread literature** (optional) — walk past a bookshelf and grab
-  any skill books / recipe magazines / leaflets you haven't consumed yet (uses
-  the game's own "already read" test, so out-levelled skill books and
-  already-known recipes are ignored). Won't grab a copy you're already carrying,
-  so you don't overload on duplicates.
+- **Auto-loot unread skill books & recipe magazines** (optional) — walk past a
+  bookshelf and grab **skill books** and **recipe-teaching** magazines/leaflets
+  you haven't consumed yet. Plain fiction is deliberately left behind. Uses the
+  game's own "already read" test, so out-levelled skill books and already-known
+  recipes are ignored, and it won't grab a copy you're already carrying.
 - **Ignore zones** — mark rectangular safe areas (e.g. your base) by picking two
   corners in the world; looting is suppressed while you stand inside one.
 - **Exclude containers & vehicles** — right-click a specific container or a whole

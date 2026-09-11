@@ -420,7 +420,7 @@ function SFSettingsPanel:createChildren()
 
     self.booksTick = ISTickBox:new(PAD, 0, 300, S_CHECK, "", self, SFSettingsPanel.onToggleBooks)
     self.booksTick:initialise(); self.booksTick:instantiate()
-    self.booksTick:addOption("Auto-loot unread books, magazines & leaflets")
+    self.booksTick:addOption("Auto-loot unread skill books & recipe magazines")
     self.booksTick:setSelected(1, SF.getData().autoLootBooks == true)
     self:addChild(self.booksTick)
 

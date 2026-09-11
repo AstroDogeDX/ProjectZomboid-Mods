@@ -5,11 +5,13 @@
     other literature the player hasn't consumed yet — while avoiding duplicates
     so you don't overload on five copies of the same book.
 
-    "Useful/unread" delegates to vanilla ISInventoryPane:isLiteratureRead(), the
-    same test the inventory uses to grey out finished books. It already handles:
-      - skill books you've already out-levelled,
-      - recipe magazines whose recipes you already know,
-      - page-tracked / titled literature you've finished reading.
+    We only want SKILL BOOKS and RECIPE PROVIDERS (magazines / leaflets that
+    teach crafting), not plain fiction. So there are two tests:
+      1. Type gate (teachesSkillOrRecipe): the item trains a skill (SkillBook[])
+         or teaches at least one recipe (getLearnedRecipes / modData.learnedRecipe).
+      2. Not-yet-consumed: delegated to vanilla ISInventoryPane:isLiteratureRead(),
+         the same test the inventory uses to grey out finished books — it handles
+         out-levelled skill books, already-known recipes, and fully-read pages.
     isLiteratureRead ignores `self`, so we can call it as a plain function.
 
     Duplicate guard:
@@ -29,8 +31,25 @@ function SF.Books.beginScan()
     seenThisScan = {}
 end
 
-function SF.Books.isUsefulLiterature(player, item)
+-- Type gate: does this literature train a skill or teach a recipe? (Excludes
+-- plain fiction / newspapers / comics with no skill or recipe payload.)
+function SF.Books.teachesSkillOrRecipe(item)
+    local trained = item.getSkillTrained and item:getSkillTrained()
+    if trained and SkillBook and SkillBook[trained] then return true end
+
+    local learned = item.getLearnedRecipes and item:getLearnedRecipes()
+    if learned and learned:size() > 0 then return true end
+
+    if item.hasModData and item:hasModData() then
+        local md = item:getModData()
+        if md and md.learnedRecipe then return true end
+    end
+    return false
+end
+
+function SF.Books.isDesiredLiterature(player, item)
     if not item or not item.IsLiterature or not item:IsLiterature() then return false end
+    if not SF.Books.teachesSkillOrRecipe(item) then return false end        -- skill/recipe only
     if ISInventoryPane and ISInventoryPane.isLiteratureRead then
         -- isLiteratureRead(self, playerObj, item) -> true if already read/known.
         return not ISInventoryPane.isLiteratureRead(ISInventoryPane, player, item)
@@ -41,7 +60,7 @@ end
 -- Should the auto-book feature grab this item right now?
 function SF.Books.shouldGrab(player, item)
     if not SF.getData().autoLootBooks then return false end
-    if not SF.Books.isUsefulLiterature(player, item) then return false end
+    if not SF.Books.isDesiredLiterature(player, item) then return false end
 
     local fullType = item:getFullType()
     if seenThisScan[fullType] then return false end
