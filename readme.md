@@ -95,14 +95,18 @@ Contents/mods/StickyFingers/
     shared/
       StickyFingers_Shared.lua   namespace, defaults, ModData persistence
     client/
-      StickyFingers_Tags.lua     tag set (add/remove/query item types)
+      StickyFingers_Tags.lua     tag set, keyed by display name
       StickyFingers_Zones.lua    rectangle storage + point-in-zone tests
-      StickyFingers_ContextMenu.lua  right-click tagging
+      StickyFingers_Excludes.lua per-container / per-vehicle exclusions
+      StickyFingers_Filters.lua  quality filters (non-fresh food, broken)
+      StickyFingers_Books.lua    unread-literature detection + dedupe
+      StickyFingers_ContextMenu.lua       inventory right-click tagging
+      StickyFingers_WorldContextMenu.lua  world right-click exclusions
       StickyFingers_Looter.lua   proximity scan + instant grab (the engine)
       StickyFingers_ZoneTool.lua two-corner world selector overlay
       ui/
-        StickyFingers_MainWindow.lua  master switch, source toggles, tabs
-        StickyFingers_Panels.lua      Tagged / Search / Zones tab panels
+        StickyFingers_MainWindow.lua  master switch + tab host
+        StickyFingers_Panels.lua      Tagged / Search / Zones / Excludes / Settings tabs
         StickyFingers_Keybinds.lua    hotkeys + Options key bindings
 workshop.txt                     Steam Workshop metadata (id=0 until published)
 ```

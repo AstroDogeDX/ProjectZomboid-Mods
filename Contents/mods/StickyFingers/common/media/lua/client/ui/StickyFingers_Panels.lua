@@ -16,6 +16,7 @@ require "ISUI/ISScrollingListBox"
 require "ISUI/ISButton"
 require "ISUI/ISTextEntryBox"
 require "ISUI/ISLabel"
+require "ISUI/ISTickBox"
 
 local PAD = 8
 local BTN_H = 24
@@ -346,4 +347,173 @@ function SFExcludePanel:onRemove()
         end
         self:refresh()
     end
+end
+
+------------------------------------------------------------------
+-- Settings panel (all toggles / sliders live here)
+------------------------------------------------------------------
+
+SFSettingsPanel = ISPanel:derive("SFSettingsPanel")
+
+local S_CHECK = 18
+local S_ROW   = 22
+
+function SFSettingsPanel:new(x, y, w, h)
+    local o = ISPanel:new(x, y, w, h)
+    setmetatable(o, self)
+    self.__index = self
+    o.background = false
+    return o
+end
+
+function SFSettingsPanel:createChildren()
+    ISPanel.createChildren(self)
+
+    self.reachTick = ISTickBox:new(PAD, 0, 200, S_CHECK, "", self, SFSettingsPanel.onToggleReach)
+    self.reachTick:initialise(); self.reachTick:instantiate()
+    self.reachTick:addOption("Respect walls (don't loot through them)")
+    self.reachTick:setSelected(1, SF.isRespectReach())
+    self:addChild(self.reachTick)
+
+    self.srcLabel = ISLabel:new(PAD, 0, 18, "Loot from these sources:", 1, 1, 1, 1, UIFont.Small, true)
+    self.srcLabel:initialise(); self:addChild(self.srcLabel)
+
+    self.srcTick = ISTickBox:new(PAD, 0, 200, S_CHECK, "", self, SFSettingsPanel.onToggleSource)
+    self.srcTick:initialise(); self.srcTick:instantiate()
+    for idx, key in ipairs(SF.SOURCE_KEYS) do
+        self.srcTick:addOption(key)
+        self.srcTick:setSelected(idx, SF.isSourceEnabled(key))
+    end
+    self:addChild(self.srcTick)
+
+    self.rangeLabel = ISLabel:new(PAD, 0, 18, "", 1, 1, 1, 1, UIFont.Small, true)
+    self.rangeLabel:initialise(); self:addChild(self.rangeLabel)
+    self.rangeMinus = ISButton:new(0, 0, 20, 20, "-", self, SFSettingsPanel.onRangeMinus)
+    self.rangeMinus:initialise(); self:addChild(self.rangeMinus)
+    self.rangePlus = ISButton:new(0, 0, 20, 20, "+", self, SFSettingsPanel.onRangePlus)
+    self.rangePlus:initialise(); self:addChild(self.rangePlus)
+    self:updateRangeLabel()
+
+    self.weightTick = ISTickBox:new(PAD, 0, 280, S_CHECK, "", self, SFSettingsPanel.onToggleWeight)
+    self.weightTick:initialise(); self.weightTick:instantiate()
+    self.weightTick:addOption("Stop looting when over the carry limit")
+    self.weightTick:setSelected(1, SF.isRespectWeight())
+    self:addChild(self.weightTick)
+
+    self.weightLabel = ISLabel:new(PAD, 0, 18, "", 1, 1, 1, 1, UIFont.Small, true)
+    self.weightLabel:initialise(); self:addChild(self.weightLabel)
+    self.weightMinus = ISButton:new(0, 0, 20, 20, "-", self, SFSettingsPanel.onWeightMinus)
+    self.weightMinus:initialise(); self:addChild(self.weightMinus)
+    self.weightPlus = ISButton:new(0, 0, 20, 20, "+", self, SFSettingsPanel.onWeightPlus)
+    self.weightPlus:initialise(); self:addChild(self.weightPlus)
+    self:updateWeightLabel()
+
+    self.filterLabel = ISLabel:new(PAD, 0, 18, "Skip these even if tagged:", 1, 1, 1, 1, UIFont.Small, true)
+    self.filterLabel:initialise(); self:addChild(self.filterLabel)
+    self.filterTick = ISTickBox:new(PAD, 0, 280, S_CHECK, "", self, SFSettingsPanel.onToggleFilters)
+    self.filterTick:initialise(); self.filterTick:instantiate()
+    self.filterTick:addOption("Non-fresh food (stale / rotten / burnt)")
+    self.filterTick:addOption("Broken items")
+    self.filterTick:setSelected(1, SF.getData().ignoreNonFreshFood == true)
+    self.filterTick:setSelected(2, SF.getData().ignoreBroken == true)
+    self:addChild(self.filterTick)
+
+    self.booksTick = ISTickBox:new(PAD, 0, 300, S_CHECK, "", self, SFSettingsPanel.onToggleBooks)
+    self.booksTick:initialise(); self.booksTick:instantiate()
+    self.booksTick:addOption("Auto-loot unread books, magazines & leaflets")
+    self.booksTick:setSelected(1, SF.getData().autoLootBooks == true)
+    self:addChild(self.booksTick)
+
+    self:layout()
+end
+
+function SFSettingsPanel:layout()
+    local w = self:getWidth()
+    local y = PAD
+
+    self.reachTick:setX(PAD); self.reachTick:setY(y)
+    y = y + self.reachTick:getHeight() + 8
+
+    self.srcLabel:setX(PAD); self.srcLabel:setY(y); y = y + 20
+    self.srcTick:setX(PAD); self.srcTick:setY(y); y = y + self.srcTick:getHeight() + 10
+
+    self.rangeLabel:setX(PAD); self.rangeLabel:setY(y + 2)
+    self.rangePlus:setX(w - PAD - 20);  self.rangePlus:setY(y)
+    self.rangeMinus:setX(w - PAD - 44); self.rangeMinus:setY(y)
+    y = y + S_ROW + 10
+
+    self.weightTick:setX(PAD); self.weightTick:setY(y)
+    y = y + self.weightTick:getHeight() + 6
+    self.weightLabel:setX(PAD); self.weightLabel:setY(y + 2)
+    self.weightPlus:setX(w - PAD - 20);  self.weightPlus:setY(y)
+    self.weightMinus:setX(w - PAD - 44); self.weightMinus:setY(y)
+    y = y + S_ROW + 10
+
+    self.filterLabel:setX(PAD); self.filterLabel:setY(y); y = y + 20
+    self.filterTick:setX(PAD); self.filterTick:setY(y)
+    y = y + self.filterTick:getHeight() + 10
+
+    self.booksTick:setX(PAD); self.booksTick:setY(y)
+end
+
+function SFSettingsPanel:prerender()
+    ISPanel.prerender(self)
+    self:layout()
+end
+
+function SFSettingsPanel:onToggleReach()
+    SF.setRespectReach(self.reachTick:isSelected(1))
+end
+
+function SFSettingsPanel:onToggleSource()
+    for idx, key in ipairs(SF.SOURCE_KEYS) do
+        SF.setSourceEnabled(key, self.srcTick:isSelected(idx))
+    end
+end
+
+function SFSettingsPanel:updateRangeLabel()
+    local r = SF.getData().range or 2
+    self.rangeLabel:setName("Scan range: " .. r .. " tile" .. (r == 1 and "" or "s"))
+end
+
+function SFSettingsPanel:onRangeMinus()
+    local data = SF.getData()
+    data.range = math.max(1, (data.range or 2) - 1)
+    SF.save(); self:updateRangeLabel()
+end
+
+function SFSettingsPanel:onRangePlus()
+    local data = SF.getData()
+    data.range = math.min(6, (data.range or 2) + 1)
+    SF.save(); self:updateRangeLabel()
+end
+
+function SFSettingsPanel:onToggleWeight()
+    SF.setRespectWeight(self.weightTick:isSelected(1))
+end
+
+function SFSettingsPanel:updateWeightLabel()
+    self.weightLabel:setName("Carry limit: " .. SF.getWeightPercent() .. "% of max")
+end
+
+function SFSettingsPanel:onWeightMinus()
+    SF.setWeightPercent(SF.getWeightPercent() - 10)
+    self:updateWeightLabel()
+end
+
+function SFSettingsPanel:onWeightPlus()
+    SF.setWeightPercent(SF.getWeightPercent() + 10)
+    self:updateWeightLabel()
+end
+
+function SFSettingsPanel:onToggleFilters()
+    local data = SF.getData()
+    data.ignoreNonFreshFood = self.filterTick:isSelected(1)
+    data.ignoreBroken = self.filterTick:isSelected(2)
+    SF.save()
+end
+
+function SFSettingsPanel:onToggleBooks()
+    SF.getData().autoLootBooks = self.booksTick:isSelected(1)
+    SF.save()
 end
