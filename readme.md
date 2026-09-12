@@ -40,9 +40,11 @@ items you care about, walk past a container, and they hop into your bag.
   this is how you avoid re-looting your own empties.
 - **Auto-loot unread skill books & recipe magazines** (optional) — walk past a
   bookshelf and grab **skill books** and **recipe-teaching** magazines/leaflets
-  you haven't consumed yet. Plain fiction is deliberately left behind. Uses the
-  game's own "already read" test, so out-levelled skill books and already-known
-  recipes are ignored, and it won't grab a copy you're already carrying.
+  you haven't consumed yet. Plain fiction is deliberately left behind. Skill
+  books are only taken if you can actually **read them at your current level** —
+  it won't hoard Vol 3-5 while you're still level 0, nor books you've out-levelled.
+  Recipe magazines are taken while they still teach something new. Won't grab a
+  copy you're already carrying.
 - **Ignore zones** — mark rectangular safe areas (e.g. your base) by picking two
   corners in the world; looting is suppressed while you stand inside one.
 - **Exclude containers & vehicles** — right-click a specific container or a whole
