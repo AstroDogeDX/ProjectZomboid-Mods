@@ -1,0 +1,6 @@
+name=Tune Up (Vehicle Repair)
+id=TuneUp
+description=Repair vehicle parts without spare parts or materials — trade time (and a little sweat) instead. A "Tune Up" option on each part in the mechanics menu slowly restores condition. The most you can restore is capped by your Mechanics skill, and higher skill makes the work faster and less tiring. An emergency spot-repair that supplements, not replaces, proper material repairs.
+author=AstroDoge
+modversion=1.0.0
+poster=poster.png

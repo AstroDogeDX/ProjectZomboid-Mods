@@ -1,0 +1,10 @@
+version=1
+id=0
+title=Tune Up (Vehicle Repair)
+description=Repair vehicle parts without spare parts or materials for Project Zomboid Build 42.
+description=
+description=Trade time (and a little sweat) instead of materials. A "Tune Up" option on each part in the mechanics menu slowly restores its condition, 1% at a time.
+description=
+description=Your Mechanics skill caps how far you can restore a part, and higher skill makes the work faster and less tiring. An emergency spot-repair that supplements proper material repairs rather than replacing them.
+tags=Build 42;Vehicles;Mechanics;Misc
+visibility=public

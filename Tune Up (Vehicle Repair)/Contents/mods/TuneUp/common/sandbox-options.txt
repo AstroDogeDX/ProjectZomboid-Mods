@@ -1,0 +1,79 @@
+VERSION = 1,
+
+option TuneUp.MaxConditionPerLevel
+{
+    type = integer, min = 0, max = 100, default = 10,
+    page = TuneUp, translation = TuneUp_MaxConditionPerLevel,
+}
+
+option TuneUp.MinSkillToRepair
+{
+    type = integer, min = 0, max = 10, default = 1,
+    page = TuneUp, translation = TuneUp_MinSkillToRepair,
+}
+
+option TuneUp.BaseMinutesPerPercent
+{
+    type = double, min = 0.1, max = 240.0, default = 10.0,
+    page = TuneUp, translation = TuneUp_BaseMinutesPerPercent,
+}
+
+option TuneUp.MinutesReductionPerLevel
+{
+    type = double, min = 0.0, max = 24.0, default = 0.9,
+    page = TuneUp, translation = TuneUp_MinutesReductionPerLevel,
+}
+
+option TuneUp.MinMinutesPerPercent
+{
+    type = double, min = 0.1, max = 60.0, default = 1.0,
+    page = TuneUp, translation = TuneUp_MinMinutesPerPercent,
+}
+
+option TuneUp.RequireTools
+{
+    type = boolean, default = true,
+    page = TuneUp, translation = TuneUp_RequireTools,
+}
+
+option TuneUp.RespectReach
+{
+    type = boolean, default = true,
+    page = TuneUp, translation = TuneUp_RespectReach,
+}
+
+option TuneUp.GrantXP
+{
+    type = boolean, default = true,
+    page = TuneUp, translation = TuneUp_GrantXP,
+}
+
+option TuneUp.XPPerPercent
+{
+    type = double, min = 0.0, max = 10.0, default = 0.2,
+    page = TuneUp, translation = TuneUp_XPPerPercent,
+}
+
+option TuneUp.FatiguePerPercent
+{
+    type = double, min = 0.0, max = 0.1, default = 0.006,
+    page = TuneUp, translation = TuneUp_FatiguePerPercent,
+}
+
+option TuneUp.BoredomPerPercent
+{
+    type = double, min = 0.0, max = 0.1, default = 0.004,
+    page = TuneUp, translation = TuneUp_BoredomPerPercent,
+}
+
+option TuneUp.ExpertLevel
+{
+    type = integer, min = 0, max = 10, default = 7,
+    page = TuneUp, translation = TuneUp_ExpertLevel,
+}
+
+option TuneUp.ExpertEaseFactor
+{
+    type = double, min = 0.0, max = 1.0, default = 0.5,
+    page = TuneUp, translation = TuneUp_ExpertEaseFactor,
+}

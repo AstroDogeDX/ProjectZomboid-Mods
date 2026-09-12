@@ -1,0 +1,15 @@
+IGUI_EN = {
+    ContextMenu_TuneUp = "Tune Up",
+
+    IGUI_TuneUp_Info = "Slowly restores this part's condition using time and effort instead of spare parts.",
+    IGUI_TuneUp_Done = "Tune up complete",
+    IGUI_TuneUp_Working = "Tuning up...",
+
+    IGUI_TuneUp_NeedTool = "Requires a wrench",
+    IGUI_TuneUp_Blocked = "Remove the %1 first to reach this part",
+    IGUI_TuneUp_NeedSkill = "Requires Mechanics level %1",
+    IGUI_TuneUp_Full = "Part is already at full condition",
+    IGUI_TuneUp_CapReached = "Your Mechanics skill limits this part to %1 percent (currently %2 percent)",
+    IGUI_TuneUp_TargetCap = "Can be tuned up to %1 percent at your Mechanics level",
+    IGUI_TuneUp_Rate = "About %1 in-game minutes per 1 percent",
+}
