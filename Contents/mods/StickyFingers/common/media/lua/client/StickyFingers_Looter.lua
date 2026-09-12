@@ -37,6 +37,23 @@ local function safe(key, fn)
     end
 end
 
+-- Make a container "aware" it was looted, mirroring what vanilla does inside
+-- ISInventoryTransferAction:transferItem — otherwise instant removal leaves the
+-- container looking untouched (stale sprite) and excluded from loot respawn:
+--   setDrawDirty        -> redraw
+--   setHasBeenLooted    -> respawn eligibility / "looted" awareness
+--   updateOverlaySprite -> swap to the emptied/looted sprite
+local function markLooted(container)
+    if container.setDrawDirty then container:setDrawDirty(true) end
+    if container.setHasBeenLooted then container:setHasBeenLooted(true) end
+    local parent = container.getParent and container:getParent()
+    if parent and parent.getOverlaySprite and parent:getOverlaySprite()
+        and ItemPicker and ItemPicker.updateOverlaySprite then
+        ItemPicker.updateOverlaySprite(parent)
+    end
+    if ISInventoryPage then ISInventoryPage.renderDirty = true end
+end
+
 ------------------------------------------------------------------
 -- Candidate collection. Each collector appends zero-arg closures to `out`;
 -- each closure performs one item move when executed. We collect first and
@@ -74,6 +91,7 @@ local function collectFromContainer(container, player, out)
                 grab = function()
                     container:Remove(item)
                     player:getInventory():AddItem(item)
+                    markLooted(container)
                 end,
             }
         end

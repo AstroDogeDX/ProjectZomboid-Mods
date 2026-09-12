@@ -133,7 +133,10 @@ workshop.txt                     Steam Workshop metadata (id=0 until published)
   rather than restructure anything.
 - **Instant grab.** Matching items are moved directly into your inventory on
   each ~400ms proximity scan (capped at 20 grabs/scan to avoid hitches). No
-  timed action and no weight gate — by design.
+  timed action — by design. After removing from a container we still replicate
+  vanilla's post-loot bookkeeping (`setHasBeenLooted`, `setDrawDirty`,
+  `ItemPicker.updateOverlaySprite`) so emptied containers update their sprite and
+  remain eligible for loot respawn, rather than looking untouched.
 
 ## Verification checklist
 
