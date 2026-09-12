@@ -14,8 +14,8 @@
         vehicle's runtime getId() is not stable across chunk unload/reload (the
         original bug — an id-keyed config entry was "forgotten" when you drove
         away and returned). modData is saved/restored with the vehicle, so the
-        exclusion sticks. Trade-off: the UI can only list currently-loaded
-        excluded vehicles.
+        exclusion sticks. Trade-off: the UI list only shows excluded vehicles
+        near the player (we sweep nearby squares to find loaded vehicles).
 ]]
 
 SF = SF or {}
@@ -137,19 +137,30 @@ function SF.Excludes.listContainers()
     return out
 end
 
--- Excluded vehicles that are currently LOADED (we can only inspect modData on
--- loaded vehicles). An excluded vehicle out in an unloaded chunk stays excluded;
--- it just won't appear in this list until you're near it again.
+-- Excluded vehicles NEAR the player. We can only read modData on loaded
+-- vehicles, and getCell():getVehicles() isn't a reliable list here, so we sweep
+-- the squares around the player with getVehicleContainer() (the same call the
+-- looter uses) and collect the excluded ones. A far-away excluded vehicle stays
+-- excluded (its modData persists); it just won't show here until you're near it.
+local LIST_RADIUS = 12
+
 function SF.Excludes.listVehicles()
     local out = {}
+    local player = getPlayer()
+    local center = player and player:getCurrentSquare()
+    if not center then return out end
+
     local cell = getCell()
-    local vehicles = cell and cell:getVehicles()
-    if vehicles then
-        for i = 0, vehicles:size() - 1 do
-            local v = vehicles:get(i)
-            if v and SF.Excludes.isVehicleExcluded(v) then
-                local name = (v.getScriptName and v:getScriptName()) or "Vehicle"
-                out[#out + 1] = { vehicle = v, label = name }
+    local cx, cy, cz = center:getX(), center:getY(), center:getZ()
+    local seen = {}
+    for dx = -LIST_RADIUS, LIST_RADIUS do
+        for dy = -LIST_RADIUS, LIST_RADIUS do
+            local sq = cell:getGridSquare(cx + dx, cy + dy, cz)
+            local veh = sq and sq:getVehicleContainer()
+            if veh and not seen[veh] and SF.Excludes.isVehicleExcluded(veh) then
+                seen[veh] = true
+                local name = (veh.getScriptName and veh:getScriptName()) or "Vehicle"
+                out[#out + 1] = { vehicle = veh, label = name }
             end
         end
     end
