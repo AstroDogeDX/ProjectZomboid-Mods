@@ -1,12 +1,6 @@
 # Sticky Fingers (Auto Looter)
 
-Clean and configurable auto looter for **Project Zomboid Build 42**. Tag the
-items you care about, walk past a container, and they hop into your bag.
-
-> **Status:** v1 scaffold — feature-complete for single-player, but several
-> engine calls need one in-game verification pass (see
-> [Verification checklist](#verification-checklist)). It is written to compile
-> and load; the checklist items are method-name confirmations, not redesigns.
+Clean and configurable auto looter for **Project Zomboid Build 42**. Tag the items you care about, walk past a container, and they hop into your bag.
 
 ## Features
 
@@ -55,11 +49,9 @@ items you care about, walk past a container, and they hop into your bag.
   unloads/reloads. Manage them in the panel's **Excludes** tab (excluded
   vehicles appear there while they're loaded/nearby).
 - **Respect walls** (on by default) — only loots containers you could actually
-  walk to. Reachability is flood-filled outward from you one walkable step at a
-  time (using the same `canReachTo` test the vanilla loot window uses), so a
-  crate on the far side of a wall is never grabbed. Your scan *range* then means
-  "tiles of reachable path," not "through anything within X tiles." Turn it off
-  in the panel for the old scan-through-walls behaviour.
+  walk to, so a crate on the far side of a wall is never grabbed. Your scan
+  *range* then means "tiles of reachable path," not "through anything within X
+  tiles." Turn it off in the panel for the old scan-through-walls behaviour.
 
 ## Controls
 
@@ -71,103 +63,26 @@ items you care about, walk past a container, and they hop into your bag.
 Both are rebindable under **Options → Key Bindings → [Sticky Fingers]**. You can
 also open the panel from any item's right-click menu.
 
-## Installing (local test)
+## Installing
 
-Build 42 mods live in your Zomboid mods folder:
+Subscribe on the Steam Workshop, or install manually:
 
-```
-%UserProfile%\Zomboid\mods\
-```
+1. Copy `Contents\mods\StickyFingers` from this repo into your mods folder so you
+   end up with:
+   ```
+   %UserProfile%\Zomboid\mods\StickyFingers\42\mod.info
+   %UserProfile%\Zomboid\mods\StickyFingers\common\media\lua\...
+   ```
+2. Enable **Sticky Fingers (Auto Looter)** in the in-game **Mods** menu and start
+   a save.
 
-Copy the mod folder there so you end up with:
+## Compatibility
 
-```
-%UserProfile%\Zomboid\mods\StickyFingers\42\mod.info
-%UserProfile%\Zomboid\mods\StickyFingers\common\media\lua\...
-```
+- **Project Zomboid Build 42**, single-player.
+- All settings are stored per-save, so different characters/worlds keep their own
+  tags, zones and exclusions.
 
-i.e. copy `Contents\mods\StickyFingers` from this repo into `Zomboid\mods\`.
-Then enable **Sticky Fingers (Auto Looter)** in the in-game Mods menu and start
-a save.
+## Feedback
 
-> Tip for iteration: make a directory symlink instead of copying, so edits here
-> show up in-game after a Lua reload/restart:
-> ```powershell
-> New-Item -ItemType SymbolicLink `
->   -Path "$env:UserProfile\Zomboid\mods\StickyFingers" `
->   -Target "$PWD\Contents\mods\StickyFingers"
-> ```
-
-## Project layout
-
-```
-Contents/mods/StickyFingers/
-  42/
-    mod.info                     Build 42 manifest (poster.png goes here too)
-  common/media/lua/
-    shared/
-      StickyFingers_Shared.lua   namespace, defaults, ModData persistence
-    client/
-      StickyFingers_Tags.lua     tag set, keyed by display name
-      StickyFingers_Zones.lua    rectangle storage + point-in-zone tests
-      StickyFingers_Excludes.lua per-container / per-vehicle exclusions
-      StickyFingers_Filters.lua  quality filters (non-fresh food, broken)
-      StickyFingers_Books.lua    unread-literature detection + dedupe
-      StickyFingers_ContextMenu.lua       inventory right-click tagging
-      StickyFingers_WorldContextMenu.lua  world right-click exclusions
-      StickyFingers_Looter.lua   proximity scan + instant grab (the engine)
-      StickyFingers_ZoneTool.lua two-corner world selector overlay
-      ui/
-        StickyFingers_MainWindow.lua  master switch + tab host
-        StickyFingers_Panels.lua      Tagged / Search / Zones / Excludes / Settings tabs
-        StickyFingers_Keybinds.lua    hotkeys + Options key bindings
-workshop.txt                     Steam Workshop metadata (id=0 until published)
-```
-
-### Design notes
-
-- **Single-player first.** All state lives in `ModData` under the key
-  `StickyFingers` and persists with the save. The code is split `shared / client
-  / server` and every write routes through `SF.save()`, so a future multiplayer
-  port only has to add server-authoritative transfers + `ModData.transmit()`
-  rather than restructure anything.
-- **Instant grab.** Matching items are moved directly into your inventory on
-  each ~400ms proximity scan (capped at 20 grabs/scan to avoid hitches). No
-  timed action — by design. After removing from a container we still replicate
-  vanilla's post-loot bookkeeping (`setHasBeenLooted`, `setDrawDirty`,
-  `ItemPicker.updateOverlaySprite`) so emptied containers update their sprite and
-  remain eligible for loot respawn, rather than looking untouched.
-
-## Verification checklist
-
-I can't run Project Zomboid from here, so a handful of Java-bound method names
-are called from memory of the B41/B42 API. Each is wrapped defensively (a bad
-call warns once to the console and is skipped rather than breaking the loop).
-Load the mod, open the debug console, and confirm these behave — adjust the
-flagged line if a name differs in your build:
-
-- [x] **Ground** — `getWorldObjects()` + `transmitRemoveItemFromSquare()`.
-      *Confirmed working in-game.*
-- [x] **Containers** — `getObjects()` + `getContainerCount()`/
-      `getContainerByIndex()` (matches vanilla; catches multi-container objects).
-      *Confirmed working in-game.*
-- [x] **Corpses & Animals** — both are `IsoDeadBody` entries in
-      `IsoGridSquare:getStaticMovingObjects()`; `so:isAnimal()` separates the two
-      source toggles. Fixed to match vanilla `ISInventoryPage.lua`.
-- [x] **Vehicles** — per-square `IsoGridSquare:getVehicleContainer()` +
-      `getPartByIndex():getItemContainer()`, gated by `canAccessContainer()`
-      (matches vanilla `ISInventoryPage.lua`). Replaced the crashing
-      `getCell():getVehicles()` approach.
-- [ ] **Zone picker** — `ISCoordConversion.ToWorld/ToScreen` argument order and
-      return values (world tile under the cursor). *Zones confirmed working; the
-      corner-picker overlay projection is the unverified part.*
-
-See the `ENGINE-API CAUTION` comment blocks in the Lua files for the exact
-lines.
-
-## Roadmap / not yet done
-
-- `poster.png` (256×256) for the mod menu — drop one in `42/`.
-- Optional: pickup sound, weight-aware mode, per-source range, "loot only when
-  standing still".
-- Multiplayer (server-authoritative transfers + tag/zone sync).
+Found a bug or have an idea? Please open an issue with a short description of what
+happened and what you expected.
