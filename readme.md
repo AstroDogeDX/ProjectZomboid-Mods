@@ -47,8 +47,11 @@ items you care about, walk past a container, and they hop into your bag.
   corners in the world; looting is suppressed while you stand inside one.
 - **Exclude containers & vehicles** — right-click a specific container or a whole
   vehicle in the world → *Sticky Fingers* → *Exclude…* to protect a loot-dump
-  crate or personal hauler from being looted back. Manage the list (and re-enable
-  them) in the panel's **Excludes** tab.
+  crate or personal hauler from being looted back. Exclusions persist properly:
+  containers by world position, and **vehicles via their own saved data**, so a
+  personal vehicle stays ignored even after you drive far away and its chunk
+  unloads/reloads. Manage them in the panel's **Excludes** tab (excluded
+  vehicles appear there while they're loaded/nearby).
 - **Respect walls** (on by default) — only loots containers you could actually
   walk to. Reachability is flood-filled outward from you one walkable step at a
   time (using the same `canReachTo` test the vanilla loot window uses), so a

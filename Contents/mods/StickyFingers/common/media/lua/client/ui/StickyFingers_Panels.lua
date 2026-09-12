@@ -427,7 +427,7 @@ function SFExcludePanel:refresh()
         self.list:addItem("[Container] " .. c.label, { kind = "container", key = c.key })
     end
     for _, v in ipairs(SF.Excludes.listVehicles()) do
-        self.list:addItem("[Vehicle] " .. v.label, { kind = "vehicle", id = v.id })
+        self.list:addItem("[Vehicle] " .. v.label, { kind = "vehicle", vehicle = v.vehicle })
     end
 end
 
@@ -437,7 +437,7 @@ function SFExcludePanel:onRemove()
         if item.item.kind == "container" then
             SF.Excludes.removeContainer(item.item.key)
         else
-            SF.Excludes.removeVehicle(item.item.id)
+            SF.Excludes.removeVehicle(item.item.vehicle)
         end
         self:refresh()
     end

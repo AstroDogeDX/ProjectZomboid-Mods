@@ -6,11 +6,16 @@
     never grabs back items dumped into them.
 
     Identity / persistence:
-      - Containers are keyed by their owning object's world position + sprite
-        name ("x,y,z|sprite"), which is stable for furniture across sessions.
-      - Vehicles are keyed by vehicle:getId() (the persistent vehicle id),
-        stored as a string.
-    Both live in config.excludes with a friendly label for the management list.
+      - Containers: keyed by their owning object's world position + sprite name
+        ("x,y,z|sprite") in config.excludes.containers. Position is stable for
+        furniture, and config lives in the save, so this survives chunk reloads
+        and is fully enumerable in the UI (even for far / unloaded crates).
+      - Vehicles: the flag is stored in the vehicle's OWN modData, because a
+        vehicle's runtime getId() is not stable across chunk unload/reload (the
+        original bug — an id-keyed config entry was "forgotten" when you drove
+        away and returned). modData is saved/restored with the vehicle, so the
+        exclusion sticks. Trade-off: the UI can only list currently-loaded
+        excluded vehicles.
 ]]
 
 SF = SF or {}
@@ -87,31 +92,36 @@ end
 
 ------------------------------------------------------------------
 -- Vehicles
+--   The exclusion flag lives in the vehicle's own modData, not our central
+--   config. Vehicle instances get a fresh runtime getId() each time their chunk
+--   reloads, so an id->config mapping is forgotten when you drive away and come
+--   back. modData is saved and restored WITH the vehicle (the same mechanism
+--   that persists e.g. heater state), so it survives chunk unload/reload.
 ------------------------------------------------------------------
 
+local VEHICLE_FLAG = "StickyFingersExcluded"
+
 function SF.Excludes.isVehicleExcluded(vehicle)
-    if not vehicle or not vehicle.getId then return false end
-    return data().vehicles[tostring(vehicle:getId())] ~= nil
+    if not vehicle or not vehicle.getModData then return false end
+    local md = vehicle:getModData()
+    return md ~= nil and md[VEHICLE_FLAG] == true
+end
+
+function SF.Excludes.setVehicleExcluded(vehicle, excluded)
+    if not vehicle or not vehicle.getModData then return end
+    vehicle:getModData()[VEHICLE_FLAG] = excluded and true or nil
+    if vehicle.transmitModData then vehicle:transmitModData() end  -- MP-safe
+    notifyUI()
 end
 
 function SF.Excludes.toggleVehicle(vehicle)
-    if not vehicle or not vehicle.getId then return false end
-    local id = tostring(vehicle:getId())
-    local vehicles = data().vehicles
-    if vehicles[id] then
-        vehicles[id] = nil
-        SF.save(); notifyUI()
-        return false
-    end
-    local name = (vehicle.getScriptName and vehicle:getScriptName()) or "Vehicle"
-    vehicles[id] = name .. " (#" .. id .. ")"
-    SF.save(); notifyUI()
-    return true
+    local now = not SF.Excludes.isVehicleExcluded(vehicle)
+    SF.Excludes.setVehicleExcluded(vehicle, now)
+    return now
 end
 
-function SF.Excludes.removeVehicle(id)
-    data().vehicles[id] = nil
-    SF.save(); notifyUI()
+function SF.Excludes.removeVehicle(vehicle)
+    SF.Excludes.setVehicleExcluded(vehicle, false)
 end
 
 ------------------------------------------------------------------
@@ -127,10 +137,21 @@ function SF.Excludes.listContainers()
     return out
 end
 
+-- Excluded vehicles that are currently LOADED (we can only inspect modData on
+-- loaded vehicles). An excluded vehicle out in an unloaded chunk stays excluded;
+-- it just won't appear in this list until you're near it again.
 function SF.Excludes.listVehicles()
     local out = {}
-    for id, label in pairs(data().vehicles) do
-        out[#out + 1] = { id = id, label = label }
+    local cell = getCell()
+    local vehicles = cell and cell:getVehicles()
+    if vehicles then
+        for i = 0, vehicles:size() - 1 do
+            local v = vehicles:get(i)
+            if v and SF.Excludes.isVehicleExcluded(v) then
+                local name = (v.getScriptName and v:getScriptName()) or "Vehicle"
+                out[#out + 1] = { vehicle = v, label = name }
+            end
+        end
     end
     table.sort(out, function(a, b) return a.label:lower() < b.label:lower() end)
     return out

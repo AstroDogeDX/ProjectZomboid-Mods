@@ -42,9 +42,10 @@ SF.Defaults = {
     },
     tags  = {},                        -- set of tagged item display-names: [name] = true
     zones = {},                        -- array of { x1, y1, x2, y2 } world-tile rectangles
-    excludes = {                       -- objects/vehicles to never loot from
+    excludes = {                       -- containers to never loot from
         containers = {},               -- [objectKey] = friendly label
-        vehicles   = {},               -- [vehicleId (string)] = friendly label
+        -- (vehicle exclusions live in each vehicle's modData, not here — see
+        --  StickyFingers_Excludes.lua for why.)
     },
 }
 
