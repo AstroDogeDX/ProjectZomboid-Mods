@@ -12,6 +12,13 @@
     For an Item *script* (search tab) only the base display name is available;
     that equals getName() for a normal/full item, so tagging still matches.
 
+    EXCEPTION — clothing: a clothing item's getName() appends its cosmetic state
+    ("(Bloody)", "(Dirty)", "(Wet)", "(Worn)") via the "%1 (%2)" format. Keying on
+    that would treat a bloody/worn shirt as a different entry from the clean tag,
+    so it would silently never be looted. Clothing therefore keys on its
+    undecorated getDisplayName() instead, grouping every state under one tag.
+    (Blood/dirt/wear aren't "broken" and aren't touched by the quality filters.)
+
     Each tag carries per-item settings:
         config.tags[displayName] = { max = number|nil, autoRemove = bool }
       - max        : stop looting this once you carry this many (nil = forever).
@@ -33,14 +40,26 @@ local function notifyUI()
 end
 
 -- InventoryItem, Item script, or raw string -> group key.
+--   Clothing      : getDisplayName() — the base name WITHOUT cosmetic state.
+--                   Clothing's getName() bakes in "(Bloody)"/"(Dirty)"/"(Wet)"/
+--                   "(Worn)" via the "%1 (%2)" format, so keying on getName()
+--                   would split a bloody/worn shirt off from its clean tag and it
+--                   would never be looted. The base name groups every state.
 --   InventoryItem : getName() — the runtime name the inventory stacks by
---                   (carries "Empty" prefix, custom names, etc.).
+--                   (carries "Empty" prefix, fluid contents, custom names, etc.),
+--                   so a dynamically renamed depleted item ("Empty ...") stays a
+--                   distinct entry from its full version.
 --   Item script   : getDisplayName() — base name (== getName() when full).
 --   string        : already a key.
 function SF.Tags.keyOf(itemOrType)
     if itemOrType == nil then return nil end
     if type(itemOrType) == "string" then return itemOrType end
-    if instanceof(itemOrType, "InventoryItem") then return itemOrType:getName() end
+    if instanceof(itemOrType, "InventoryItem") then
+        if instanceof(itemOrType, "Clothing") then
+            return itemOrType:getDisplayName()
+        end
+        return itemOrType:getName()
+    end
     if itemOrType.getDisplayName then return itemOrType:getDisplayName() end
     return nil
 end
