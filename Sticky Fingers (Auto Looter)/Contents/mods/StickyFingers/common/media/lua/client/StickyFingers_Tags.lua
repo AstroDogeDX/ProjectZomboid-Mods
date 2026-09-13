@@ -12,12 +12,15 @@
     For an Item *script* (search tab) only the base display name is available;
     that equals getName() for a normal/full item, so tagging still matches.
 
-    EXCEPTION — clothing: a clothing item's getName() appends its cosmetic state
-    ("(Bloody)", "(Dirty)", "(Wet)", "(Worn)") via the "%1 (%2)" format. Keying on
-    that would treat a bloody/worn shirt as a different entry from the clean tag,
-    so it would silently never be looted. Clothing therefore keys on its
-    undecorated getDisplayName() instead, grouping every state under one tag.
-    (Blood/dirt/wear aren't "broken" and aren't touched by the quality filters.)
+    CONDITION STATES: getName() appends a cosmetic state as "<base> (state)" via
+    the "%1 (%2)" format — (Bloody)/(Dirty)/(Wet)/(Worn) on clothing, (Dull) on
+    blades, and even (Bloody) on a plain tool like a screwdriver. Keying on that
+    would treat a bloody/dull item as a different entry from the clean tag, so it
+    would silently never be looted. keyOf() therefore falls back to the
+    undecorated base name whenever getName() is only the base plus an appended
+    "(...)", grouping every condition under one tag. These states aren't "broken"
+    and aren't touched by the quality filters — broken (literally unusable),
+    non-fresh food, and empty are separate opt-in toggles.
 
     Each tag carries per-item settings:
         config.tags[displayName] = { max = number|nil, autoRemove = bool }
@@ -40,25 +43,29 @@ local function notifyUI()
 end
 
 -- InventoryItem, Item script, or raw string -> group key.
---   Clothing      : getDisplayName() — the base name WITHOUT cosmetic state.
---                   Clothing's getName() bakes in "(Bloody)"/"(Dirty)"/"(Wet)"/
---                   "(Worn)" via the "%1 (%2)" format, so keying on getName()
---                   would split a bloody/worn shirt off from its clean tag and it
---                   would never be looted. The base name groups every state.
---   InventoryItem : getName() — the runtime name the inventory stacks by
---                   (carries "Empty" prefix, fluid contents, custom names, etc.),
---                   so a dynamically renamed depleted item ("Empty ...") stays a
---                   distinct entry from its full version.
+--   InventoryItem : getName() (the runtime name the inventory stacks by — carries
+--                   the "Empty" prefix, fluid contents, custom names), EXCEPT when
+--                   the only decoration is an appended "(state)" condition, in
+--                   which case the undecorated getDisplayName() is used so every
+--                   condition groups under one tag (see the header note).
 --   Item script   : getDisplayName() — base name (== getName() when full).
 --   string        : already a key.
 function SF.Tags.keyOf(itemOrType)
     if itemOrType == nil then return nil end
     if type(itemOrType) == "string" then return itemOrType end
     if instanceof(itemOrType, "InventoryItem") then
-        if instanceof(itemOrType, "Clothing") then
-            return itemOrType:getDisplayName()
+        local base = itemOrType:getDisplayName()
+        local full = itemOrType:getName()
+        -- Strip a trailing cosmetic-condition decoration: getName() appends state
+        -- as "<base> (state)" via the "%1 (%2)" format. When that's the only
+        -- difference from the base name, key on the base so (Bloody)/(Dull)/
+        -- (Worn)/(Dirty)/(Wet) etc. all group under one tag. Any other rename
+        -- ("Empty ..." prefix, fluid contents, a custom name) doesn't fit that
+        -- shape and keeps getName(), staying a distinct entry.
+        if base and full and full ~= base and full:sub(1, #base + 2) == base .. " (" then
+            return base
         end
-        return itemOrType:getName()
+        return full
     end
     if itemOrType.getDisplayName then return itemOrType:getDisplayName() end
     return nil
