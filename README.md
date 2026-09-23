@@ -10,6 +10,10 @@ Each mod lives in its own folder and works independently — pick and choose whi
 
 Automatically pick up the loot you actually care about as you walk past containers, the ground, vehicles, corpses and animals. Tag the items you want, set per-item carry limits, mark safe zones around your base, and let the tedium of looting take care of itself. Fully configurable, with a searchable item browser and a master on/off switch.
 
+### 🧈 [Butter Fingers (Auto Declutter)](./Butter%20Fingers%20%28Auto%20Declutter%29)
+
+The anti-hoarding counterpart to Sticky Fingers. Automatically drops — or dumps into a nearby bin — the junk you don't want: empty containers, broken items, read books, plus anything you tag. Favourites are always protected, marking an item "unwanted" flags it for dropping, and picking a junk item back up auto-protects it.
+
 ### 🔧 [Tune Up (Vehicle Repair)](./Tune%20Up%20%28Vehicle%20Repair%29)
 
 Repair vehicle parts without spare parts or materials — trade time (and a little sweat) instead. A "Tune Up" option on each part slowly restores its condition, capped by your Mechanics skill and sped up as you level. An emergency field repair that supplements, rather than replaces, the vanilla material-based system.

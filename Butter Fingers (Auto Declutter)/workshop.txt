@@ -1,0 +1,10 @@
+version=1
+id=0
+title=Butter Fingers (Auto Declutter)
+description=The anti-hoarding counterpart to Sticky Fingers for Project Zomboid Build 42.
+description=
+description=Automatically drops — or dumps into a nearby bin — the junk you don't want: empty containers, broken items, read books and recipes, plus anything you tag. Your favourites are always protected.
+description=
+description=Mark an item "unwanted" to flag it for dropping, tag containers as dump targets (trash cans qualify automatically), and pick a junk item back up to auto-protect it. Everything is configurable, and it plays nicely with Sticky Fingers.
+tags=Build 42;Interface;Items;Misc
+visibility=public
